@@ -20,22 +20,17 @@ struct SettingsView: View {
                 .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
                 .tag("updates")
         }
-        .frame(width: 520, height: 400)
+        .frame(width: 520)
+        .noInitialFocus()
     }
 }
 
 private struct GeneralSettings: View {
-    @AppStorage(Preferences.theme) private var theme = AppTheme.system
     @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
 
     var body: some View {
         Form {
             Section {
-                Picker("Appearance", selection: $theme) {
-                    ForEach(AppTheme.allCases, id: \.self) { Text($0.title).tag($0) }
-                }
-                .onChange(of: theme) { _, theme in theme.apply() }
-
                 Picker("Show lists as", selection: $viewMode) {
                     ForEach(ListViewMode.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -50,6 +45,7 @@ private struct GeneralSettings: View {
             }
         }
         .formStyle(.grouped)
+        .fitsContent()
     }
 }
 
@@ -98,6 +94,7 @@ private struct ScanningSettings: View {
             }
         }
         .formStyle(.grouped)
+        .fitsContent()
     }
 
     private func addFolder() {
@@ -168,6 +165,7 @@ private struct NativeVersionSettings: View {
             }
         }
         .formStyle(.grouped)
+        .fitsContent()
     }
 }
 
@@ -194,5 +192,6 @@ private struct UpdatesSettings: View {
             }
         }
         .formStyle(.grouped)
+        .fitsContent()
     }
 }

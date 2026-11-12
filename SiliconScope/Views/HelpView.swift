@@ -94,8 +94,9 @@ struct HelpView: View {
 
         case .installedApps:
             Paragraph("The chips at the top count each kind of app and filter the list: click one to show only those apps, click it again to show them all.")
-            Paragraph("**Table** shows every app in sortable columns; **Grouped** puts them under Intel, Universal and Apple Silicon. The choice in **Settings > General** sets how lists open.")
-            Paragraph("Double-click an app to open it. Right-click for **Reveal in Finder**, **Copy Path**, and, for Intel apps, **Check for Apple Silicon Version**.")
+            Paragraph("**Table** shows every app in sortable columns; **Grouped** puts them under Intel, Universal and Apple Silicon. Switch with the two buttons in the toolbar or **View > As Table** (⌃⌘1) and **View > As Groups** (⌃⌘2); **Settings > General** sets how lists open.")
+            Paragraph("Double-click an app to open it. Right-click for **Reveal in Finder**, **Copy Path**, and, for Intel apps, **Check for Apple Silicon Version**. Command-click or Shift-click to select several apps; the right-click menu then acts on all of them, for example **Update 3 Apps…**.")
+            Paragraph("**View > Refresh** (⌘R) rescans the app folders.")
             Paragraph("**Windows App** marks the small launchers CrossOver makes for Windows programs. They always run through Wine and Rosetta, so they're never searched. Hide them in **Settings > Scanning**.")
 
         case .nativeVersions:
@@ -117,10 +118,12 @@ struct HelpView: View {
             Term("App Store", color: .blue, "The button reads **App Store** and opens the app's page, where you update it.")
             Paragraph("When an update fails, the button becomes **Retry**; hold the pointer over it for the reason. Some Homebrew apps need your administrator password: right-click and choose **Finish Update in Terminal**.")
             Paragraph("After an update, SiliconScope rescans and the **Log** says what the app is now: Universal or Apple Silicon.")
+            Paragraph("Changed your mind? **Edit > Undo Update** (⌘Z), or right-click the app and choose **Put Back Previous Version**: the new copy goes to the Trash and your old one comes back, as long as it's still in the Trash. A **brew upgrade** of an app Homebrew already managed can't be put back.")
 
         case .processes:
             Paragraph("**Running Processes** asks macOS which processes it is translating with Rosetta right now. This is what is actually running, not what the app on disk contains: a universal app opened with **Open using Rosetta** shows up as Rosetta here.")
-            Paragraph("Right-click a process to reveal it in Finder, copy its path, or **Quit Process…**. Quitting sends the same signal as quitting normally; unsaved work in that process may be lost.")
+            Paragraph("Right-click a process to reveal it in Finder, copy its path, or **Quit Process…**. Select several with Command-click or Shift-click to act on all of them. Quitting sends the same signal as quitting normally; unsaved work in that process may be lost.")
+            Paragraph("**View > Refresh** (⌘R) lists the processes again.")
             Paragraph("Turn on **Refresh running processes every 5 seconds** in **Settings > Scanning** to keep the list current.")
 
         case .log:
@@ -128,7 +131,7 @@ struct HelpView: View {
             Paragraph("Click a level or a source to filter, search with the field in the toolbar, and use **Clear** (⌘K) to start fresh. The file stays in ~/Library/Logs/SiliconScope; **Help > Open Logs Folder** shows it.")
 
         case .settings:
-            Term("General", color: .secondary, "Appearance, and whether lists open as a table or grouped.")
+            Term("General", color: .secondary, "Whether lists open as a table or grouped, and where the log file is. Light and dark follow your Mac (System Settings > Appearance).")
             Term("Scanning", color: .secondary, "Extra folders to scan (an external drive's Applications folder, say), CrossOver launchers, and refreshing processes.")
             Term("Apple Silicon Versions", color: .secondary, "Check after every scan, which sources to ask, and downloading Homebrew's list again.")
             Term("Updates", color: .secondary, "Updates of SiliconScope itself.")
@@ -140,7 +143,9 @@ struct HelpView: View {
 
         case .shortcuts:
             Shortcut("⌘1, ⌘2, ⌘3", "Installed Apps, Running Processes, Log")
-            Shortcut("⌘R", "Rescan apps")
+            Shortcut("⌘R", "Refresh the page: rescan apps or processes")
+            Shortcut("⌘Z", "Undo the last update")
+            Shortcut("⌃⌘1, ⌃⌘2", "Show lists as a table or grouped by architecture")
             Shortcut("⇧⌘U", "Check for Apple Silicon versions")
             Shortcut("⌘F", "Filter the list")
             Shortcut("⌘K", "Clear the log (on the Log page)")

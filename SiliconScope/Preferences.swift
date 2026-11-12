@@ -3,7 +3,6 @@ import Foundation
 
 /// UserDefaults keys, shared by Settings (`@AppStorage`) and the model.
 enum Preferences {
-    static let theme = "theme"
     static let listViewMode = "listViewMode"
     static let extraScanFolders = "extraScanFolders"
     static let showCrossOverLaunchers = "showCrossOverLaunchers"
@@ -14,6 +13,8 @@ enum Preferences {
     static let useAppStore = "nativeSourceAppStore"
 
     static func register() {
+        // The Appearance setting is gone (1.3): windows follow the Mac's appearance.
+        UserDefaults.standard.removeObject(forKey: "theme")
         UserDefaults.standard.register(defaults: [
             showCrossOverLaunchers: true,
             refreshProcesses: false,
@@ -37,32 +38,6 @@ enum Preferences {
         if defaults.bool(forKey: useUpdateFeeds) { sources.insert(.sparkle) }
         if defaults.bool(forKey: useAppStore) { sources.insert(.appStore) }
         return sources
-    }
-}
-
-/// Light, dark, or whatever macOS uses.
-enum AppTheme: String, CaseIterable {
-    case system, light, dark
-
-    static var current: AppTheme {
-        UserDefaults.standard.string(forKey: Preferences.theme).flatMap(AppTheme.init) ?? .system
-    }
-
-    var title: String {
-        switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
-        }
-    }
-
-    /// Applies to every window, including Settings and Help.
-    @MainActor func apply() {
-        NSApp.appearance = switch self {
-        case .system: nil
-        case .light: NSAppearance(named: .aqua)
-        case .dark: NSAppearance(named: .darkAqua)
-        }
     }
 }
 

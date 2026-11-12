@@ -5,6 +5,7 @@ import SwiftUI
 struct AppCommands: Commands {
     let model: AppModel
     let appUpdater: AppUpdater
+    @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) { }
@@ -25,6 +26,15 @@ struct AppCommands: Commands {
                     .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
             }
             Divider()
+            Button("Refresh") { model.refreshCurrentPage() }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(!model.canRefreshCurrentPage)
+            Divider()
+            Toggle("As Table", isOn: Binding(get: { viewMode == .table }, set: { if $0 { viewMode = .table } }))
+                .keyboardShortcut("1", modifiers: [.command, .control])
+            Toggle("As Groups", isOn: Binding(get: { viewMode == .grouped }, set: { if $0 { viewMode = .grouped } }))
+                .keyboardShortcut("2", modifiers: [.command, .control])
+            Divider()
         }
 
         CommandMenu("Apps") {
@@ -32,7 +42,7 @@ struct AppCommands: Commands {
                 model.page = .apps
                 Task { await model.scanApps() }
             }
-            .keyboardShortcut("r", modifiers: .command)
+            .disabled(model.isScanningApps)
 
             Button("Check for Apple Silicon Versions") {
                 model.page = .apps

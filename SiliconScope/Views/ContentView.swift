@@ -19,6 +19,8 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
     @Bindable var model: AppModel
+    /// The open page, brought back on relaunch.
+    @SceneStorage("page") private var savedPage = SidebarItem.apps.rawValue
 
     var body: some View {
         NavigationSplitView {
@@ -39,7 +41,7 @@ struct ContentView: View {
             case .apps:
                 AppListView(model: model)
             case .processes:
-                ProcessListView()
+                ProcessListView(model: model)
             case .log:
                 LogViewer(model: model.log, options: .init(
                     emptyMessage: "Scans and Apple Silicon version checks are logged here.",
@@ -55,6 +57,10 @@ struct ContentView: View {
             case .none:
                 ContentUnavailableView("Select a Category", systemImage: "sidebar.left")
             }
+        }
+        .onAppear { model.page = SidebarItem(rawValue: savedPage) ?? .apps }
+        .onChange(of: model.page) { _, page in
+            if let page { savedPage = page.rawValue }
         }
     }
 }

@@ -30,8 +30,5 @@ struct AppRow: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .contextMenu {
-            AppActions(model: model, app: app, onUpdate: onUpdate)
-        }
     }
 }

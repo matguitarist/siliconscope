@@ -24,23 +24,47 @@ actor AppInstaller {
         ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"].first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    func install(_ method: UpdateMethod, for app: AppItem, progress: Progress) async throws {
+    /// Returns where the old copy went in the Trash, when it can be put back.
+    @discardableResult
+    func install(_ method: UpdateMethod, for app: AppItem, progress: Progress) async throws -> URL? {
         switch method {
         case .homebrew(let token):
-            try await installWithHomebrew(token: token, app: app, progress: progress)
+            return try await installWithHomebrew(token: token, app: app, progress: progress)
         case .download(let download):
-            try await installDownload(download, app: app, progress: progress)
+            return try await installDownload(download, app: app, progress: progress)
         case .appStore(let url):
             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
             components?.scheme = "macappstore"
             let storeURL = components?.url ?? url
             await MainActor.run { _ = NSWorkspace.shared.open(storeURL) }
+            return nil
+        }
+    }
+
+    /// Undoes an update: the new copy goes to the Trash and the old one comes back to its path.
+    func putBack(oldCopy: URL, at path: String) throws {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: oldCopy.path) else {
+            throw InstallError("The old copy is no longer in the Trash.")
+        }
+        let destination = URL(filePath: path)
+        if fm.fileExists(atPath: path) {
+            do {
+                try fm.trashItem(at: destination, resultingItemURL: nil)
+            } catch {
+                throw InstallError("Couldn't move the new copy to the Trash: \(error.localizedDescription)")
+            }
+        }
+        do {
+            try fm.moveItem(at: oldCopy, to: destination)
+        } catch {
+            throw InstallError("Couldn't put the old copy back: \(error.localizedDescription)")
         }
     }
 
     // MARK: - Homebrew
 
-    private func installWithHomebrew(token: String, app: AppItem, progress: Progress) async throws {
+    private func installWithHomebrew(token: String, app: AppItem, progress: Progress) async throws -> URL? {
         guard let brew = Self.brewPath else {
             throw InstallError("Homebrew isn't installed. Get it from brew.sh, or download \(app.name) from its website.", terminalCommand: nil)
         }
@@ -52,6 +76,20 @@ actor AppInstaller {
         await progress(managed ? "Upgrading…" : "Installing…")
         AppLog.post(.info, "\(app.name): running \(command)", source: "Homebrew")
 
+        // A copy Homebrew doesn't manage goes to the Trash first, so the update can be undone
+        // (--force would delete it). It comes back if brew fails.
+        var trashed: URL?
+        if !managed {
+            var resulting: NSURL?
+            try? FileManager.default.trashItem(at: URL(filePath: app.path), resultingItemURL: &resulting)
+            trashed = resulting as URL?
+        }
+        func restore() {
+            if let trashed, !FileManager.default.fileExists(atPath: app.path) {
+                try? FileManager.default.moveItem(at: trashed, to: URL(filePath: app.path))
+            }
+        }
+
         let result = try await ProcessRunner.run(brew, arguments, environment: [
             "HOMEBREW_NO_ENV_HINTS": "1",
             "NONINTERACTIVE": "1",
@@ -60,6 +98,7 @@ actor AppInstaller {
             AppLog.post(level, line, source: "Homebrew")
         }
         guard result.status == 0 else {
+            restore()
             let reason = result.output.contains("sudo") || result.output.contains("password")
                 ? "This cask needs your administrator password."
                 : (result.output.split(separator: "\n").last { $0.hasPrefix("Error") }.map(String.init) ?? "brew stopped with code \(result.status).")
@@ -68,15 +107,26 @@ actor AppInstaller {
 
         // Homebrew installs into /Applications; a copy somewhere else is now the old one.
         let installedPath = "/Applications/\(app.bundleFileName)"
-        if app.path != installedPath, Bundle(path: installedPath)?.bundleIdentifier == app.bundleIdentifier {
-            try? FileManager.default.trashItem(at: URL(filePath: app.path), resultingItemURL: nil)
+        guard Bundle(path: installedPath)?.bundleIdentifier == app.bundleIdentifier else {
+            // The cask put the app under another name: keep the old copy where it was.
+            restore()
+            AppLog.post(.warning, "Homebrew finished, but \(app.bundleFileName) isn't in /Applications", source: "Homebrew")
+            return nil
+        }
+        if trashed == nil, app.path != installedPath {
+            var resulting: NSURL?
+            try? FileManager.default.trashItem(at: URL(filePath: app.path), resultingItemURL: &resulting)
+            trashed = resulting as URL?
+        }
+        if trashed != nil {
             AppLog.post(.info, "Moved the old copy of \(app.name) at \(app.path) to the Trash", source: "Homebrew")
         }
+        return trashed
     }
 
     // MARK: - Download from the app's feed
 
-    private func installDownload(_ download: SparkleDownload, app: AppItem, progress: Progress) async throws {
+    private func installDownload(_ download: SparkleDownload, app: AppItem, progress: Progress) async throws -> URL? {
         let work = FileManager.default.temporaryDirectory.appending(path: "SiliconScope-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
         var mountPoint: URL?
@@ -125,8 +175,9 @@ actor AppInstaller {
 
         try await quitIfRunning(app, progress: progress)
         await progress("Installing…")
-        try replace(old: URL(filePath: app.path), with: newApp)
+        let trashed = try replace(old: URL(filePath: app.path), with: newApp)
         AppLog.post(.info, "\(app.name) \(download.version) installed; the old copy is in the Trash", source: "Update Feed")
+        return trashed
     }
 
     /// Checks the archive the way Sparkle does. Returns whether it was checked.
@@ -169,7 +220,8 @@ actor AppInstaller {
     }
 
     /// Moves the old copy to the Trash and puts the new one at its path, or puts the old one back.
-    private func replace(old: URL, with new: URL) throws {
+    /// Returns where the old copy went in the Trash.
+    private func replace(old: URL, with new: URL) throws -> URL? {
         let fm = FileManager.default
         var trashed: NSURL?
         do {
@@ -184,6 +236,7 @@ actor AppInstaller {
             if let trashed = trashed as URL? { try? fm.moveItem(at: trashed, to: old) }
             throw error
         }
+        return trashed as URL?
     }
 
     // MARK: - Helpers

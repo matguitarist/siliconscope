@@ -15,6 +15,7 @@
 		241684C70AC71DC57DB34D33 /* Architecture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF16930A67FF276561AF67A /* Architecture.swift */; };
 		2C1408F64A6769F2E77A35B9 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C77EB5DEE2BBDCA31BF2279 /* Preferences.swift */; };
 		2CA3C9F847F98153F7ABFB6F /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F00C5913099C75666DD57D /* AppLog.swift */; };
+		3A9B27F1C054F46731B4622D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 18581DBBAD93582EE1C25122 /* AppIcon.icon */; };
 		5A0A30448A0F7354117011DC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD4498BF6CE532C340E0276 /* SettingsView.swift */; };
 		644EB9CF2AE960569FA993E2 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD471CA088306326EE3D899 /* AppUpdater.swift */; };
 		7251B26424754A4FFEB11CDE /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB3C3BF9A75341F2CFB1898 /* AppModel.swift */; };
@@ -34,9 +35,11 @@
 		EF95F3763E929A893743D8D4 /* AppListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D4C0A798109DFD336271BE /* AppListView.swift */; };
 		F0F2FEAD54DE6CF42C246B41 /* AppRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE828D672BE5659C6CFEE764 /* AppRow.swift */; };
 		F1E9850AC264DB5DE828E49E /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D13ADF6FA8D5197D56C1740 /* HelpView.swift */; };
+		FCCFF798C66203E99DC6ABB5 /* WindowBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D070609119BC8B5C2D74E88 /* WindowBehavior.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		18581DBBAD93582EE1C25122 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		213441F6846285F1D9FEF2D1 /* AppScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScanner.swift; sourceTree = "<group>"; };
 		3D13ADF6FA8D5197D56C1740 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		3DF16930A67FF276561AF67A /* Architecture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Architecture.swift; sourceTree = "<group>"; };
@@ -50,6 +53,7 @@
 		65197273EA8EBE36F89A4968 /* MachOReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOReader.swift; sourceTree = "<group>"; };
 		69F00C5913099C75666DD57D /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		702011A87CC217D90BFC1BC6 /* SiliconScope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiliconScope.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D070609119BC8B5C2D74E88 /* WindowBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowBehavior.swift; sourceTree = "<group>"; };
 		82FDE11B27780162F1777141 /* AppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconView.swift; sourceTree = "<group>"; };
 		8B6E9D1C5CD4C527372C1A5A /* ProcessScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessScanner.swift; sourceTree = "<group>"; };
 		9DD471CA088306326EE3D899 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
@@ -119,6 +123,7 @@
 				D680063B976FA2260460AC01 /* ProcessListView.swift */,
 				578BA0034ED49BEEC107C05A /* ProcessRow.swift */,
 				FFD4498BF6CE532C340E0276 /* SettingsView.swift */,
+				7D070609119BC8B5C2D74E88 /* WindowBehavior.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -133,6 +138,7 @@
 				C585AA4A74E0401A34788CDD /* SiliconScope.entitlements */,
 				4DB5E65C1D8D72FB5F98A4CD /* SiliconScopeApp.swift */,
 				4258A4E2095DCE12EED9285C /* Models */,
+				F13977B206683393DECBA343 /* Resources */,
 				D27741F70E9012BED2AF327C /* Services */,
 				8AA11FE48C3143275A171E28 /* Views */,
 			);
@@ -154,6 +160,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		F13977B206683393DECBA343 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				18581DBBAD93582EE1C25122 /* AppIcon.icon */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -162,6 +176,7 @@
 			buildConfigurationList = 5632BC77DD2DF74B59F155BE /* Build configuration list for PBXNativeTarget "SiliconScope" */;
 			buildPhases = (
 				0951E2440BB20B8A92F2A1CA /* Sources */,
+				9C41550887AB99D5DE013473 /* Resources */,
 				4DBFA8C61853DF40B9DC965A /* Frameworks */,
 			);
 			buildRules = (
@@ -214,6 +229,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		9C41550887AB99D5DE013473 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3A9B27F1C054F46731B4622D /* AppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		0951E2440BB20B8A92F2A1CA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -244,6 +270,7 @@
 				C5ABC8596CEB7BAD984DC51C /* ProcessScanner.swift in Sources */,
 				5A0A30448A0F7354117011DC /* SettingsView.swift in Sources */,
 				B647CC5E5F521AFC9ADDC979 /* SiliconScopeApp.swift in Sources */,
+				FCCFF798C66203E99DC6ABB5 /* WindowBehavior.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,16 +1,18 @@
 import SwiftUI
 
 struct ProcessListView: View {
+    let model: AppModel
     @State private var processes: [ProcessItem] = []
     @State private var isLoading = true
     @State private var searchText = ""
     @State private var sortOrder = [KeyPathComparator(\ProcessItem.architecture)]
-    @State private var selection: ProcessItem.ID?
+    @State private var selection: Set<ProcessItem.ID> = []
     @State private var statusFilter: Architecture?
     @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
     @AppStorage(Preferences.refreshProcesses) private var refreshProcesses = false
     @State private var expandedGroups: Set<Architecture> = Set(Architecture.allCases)
-    @State private var processPendingQuit: ProcessItem?
+    /// Processes waiting for the person to confirm quitting them.
+    @State private var processesPendingQuit: [ProcessItem] = []
     @State private var quitErrorMessage: String?
 
     private var filteredProcesses: [ProcessItem] {
@@ -48,10 +50,12 @@ struct ProcessListView: View {
             ToolbarItem {
                 Picker("View", selection: $viewMode) {
                     ForEach(ListViewMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Label(mode.rawValue, systemImage: mode.symbolName).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelStyle(.iconOnly)
+                .help("Show as a table (⌃⌘1) or grouped by architecture (⌃⌘2)")
             }
             ToolbarItem {
                 Button {
@@ -60,7 +64,7 @@ struct ProcessListView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(isLoading)
-                .help("Rescan running processes")
+                .help("Rescan running processes (⌘R)")
             }
         }
         .task(id: refreshProcesses) {
@@ -71,26 +75,25 @@ struct ProcessListView: View {
                 await loadProcesses(quietly: true)
             }
         }
+        .onChange(of: model.processRefreshRequest) {
+            Task { await loadProcesses() }
+        }
         .confirmationDialog(
-            "Quit \(processPendingQuit?.name ?? "Process")?",
+            quitTitle,
             isPresented: Binding(
-                get: { processPendingQuit != nil },
-                set: { if !$0 { processPendingQuit = nil } }
+                get: { !processesPendingQuit.isEmpty },
+                set: { if !$0 { processesPendingQuit = [] } }
             ),
             titleVisibility: .visible
         ) {
-            if let process = processPendingQuit {
-                Button("Quit", role: .destructive) {
-                    quit(process)
-                }
-                Button("Cancel", role: .cancel) {
-                    processPendingQuit = nil
-                }
+            Button("Quit", role: .destructive) {
+                quit(processesPendingQuit)
+            }
+            Button("Cancel", role: .cancel) {
+                processesPendingQuit = []
             }
         } message: {
-            if let process = processPendingQuit {
-                Text("This sends a terminate signal to \(process.name) (PID \(process.id)). Unsaved work in that process may be lost.")
-            }
+            Text(quitMessage)
         }
         .alert(
             "Couldn't Quit Process",
@@ -102,6 +105,38 @@ struct ProcessListView: View {
             Button("OK", role: .cancel) { quitErrorMessage = nil }
         } message: {
             Text(quitErrorMessage ?? "")
+        }
+    }
+
+    private var quitTitle: String {
+        if processesPendingQuit.count == 1, let process = processesPendingQuit.first {
+            return "Quit \(process.name)?"
+        }
+        return "Quit \(processesPendingQuit.count) Processes?"
+    }
+
+    private var quitMessage: String {
+        if processesPendingQuit.count == 1, let process = processesPendingQuit.first {
+            return "This sends a terminate signal to \(process.name) (PID \(process.id)). Unsaved work in that process may be lost."
+        }
+        return "This sends a terminate signal to \(processesPendingQuit.map(\.name).formatted(.list(type: .and))). Unsaved work in them may be lost."
+    }
+
+    /// The context menu for the clicked row, or for every selected row.
+    @ViewBuilder
+    private func actions(for ids: Set<ProcessItem.ID>) -> some View {
+        let selected = processes.filter { ids.contains($0.id) }
+        if !selected.isEmpty {
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting(selected.map { URL(fileURLWithPath: $0.path) })
+            }
+            Button(selected.count == 1 ? "Copy Path" : "Copy Paths") {
+                FileActions.copyToPasteboard(selected.map(\.path).joined(separator: "\n"))
+            }
+            Divider()
+            Button(selected.count == 1 ? "Quit Process…" : "Quit \(selected.count) Processes…", role: .destructive) {
+                processesPendingQuit = selected
+            }
         }
     }
 
@@ -159,30 +194,16 @@ struct ProcessListView: View {
                     .truncationMode(.middle)
             }
         }
-        .contextMenu(forSelectionType: ProcessItem.ID.self) { selectedIDs in
-            if let id = selectedIDs.first, let process = processes.first(where: { $0.id == id }) {
-                Button("Reveal in Finder") {
-                    FileActions.revealInFinder(path: process.path)
-                }
-                Button("Copy Path") {
-                    FileActions.copyToPasteboard(process.path)
-                }
-                Divider()
-                Button("Quit Process…", role: .destructive) {
-                    processPendingQuit = process
-                }
-            }
-        }
+        .contextMenu(forSelectionType: ProcessItem.ID.self, menu: actions(for:))
     }
 
     private var groupedView: some View {
-        List {
+        List(selection: $selection) {
             ForEach(groupedProcesses, id: \.architecture) { group in
                 DisclosureGroup(isExpanded: expandedBinding(for: group.architecture)) {
                     ForEach(group.items) { process in
-                        ProcessRow(process: process) {
-                            processPendingQuit = process
-                        }
+                        ProcessRow(process: process)
+                            .tag(process.id)
                     }
                 } label: {
                     HStack {
@@ -198,6 +219,7 @@ struct ProcessListView: View {
                 }
             }
         }
+        .contextMenu(forSelectionType: ProcessItem.ID.self, menu: actions(for:))
     }
 
     private func expandedBinding(for architecture: Architecture) -> Binding<Bool> {
@@ -241,16 +263,22 @@ struct ProcessListView: View {
         statusFilter = (statusFilter == architecture) ? nil : architecture
     }
 
-    private func quit(_ process: ProcessItem) {
-        processPendingQuit = nil
-        do {
-            try ProcessScanner.terminate(pid: process.id)
-            Task {
-                try? await Task.sleep(for: .seconds(1))
-                await loadProcesses()
+    private func quit(_ targets: [ProcessItem]) {
+        processesPendingQuit = []
+        var failures: [String] = []
+        for process in targets {
+            do {
+                try ProcessScanner.terminate(pid: process.id)
+            } catch {
+                failures.append("\(process.name): \(error.localizedDescription)")
             }
-        } catch {
-            quitErrorMessage = "Couldn't quit \(process.name): \(error.localizedDescription)"
+        }
+        if !failures.isEmpty {
+            quitErrorMessage = "Couldn't quit " + failures.joined(separator: "\n")
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            await loadProcesses()
         }
     }
 
@@ -269,5 +297,5 @@ struct ProcessListView: View {
 }
 
 #Preview {
-    ProcessListView()
+    ProcessListView(model: AppModel())
 }

@@ -4,13 +4,21 @@ enum ListViewMode: String, CaseIterable, Identifiable {
     case table = "Table"
     case grouped = "Grouped"
     var id: String { rawValue }
+
+    var symbolName: String {
+        switch self {
+        case .table: "tablecells"
+        case .grouped: "list.bullet.indent"
+        }
+    }
 }
 
 struct AppListView: View {
     let model: AppModel
     @State private var searchText = ""
     @State private var sortOrder = [KeyPathComparator(\AppItem.architecture)]
-    @State private var selection: AppItem.ID?
+    @State private var selection: Set<AppItem.ID> = []
+    @Environment(\.undoManager) private var undoManager
     @State private var architectureFilter: Architecture?
     @State private var showOnlyNativeAvailable = false
     @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
@@ -68,10 +76,12 @@ struct AppListView: View {
             ToolbarItem {
                 Picker("View", selection: $viewMode) {
                     ForEach(ListViewMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Label(mode.rawValue, systemImage: mode.symbolName).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelStyle(.iconOnly)
+                .help("Show as a table (⌃⌘1) or grouped by architecture (⌃⌘2)")
             }
             ToolbarItem {
                 Button {
@@ -82,7 +92,7 @@ struct AppListView: View {
                 .disabled(model.isScanningApps || model.isCheckingNative || checkableCount == 0)
                 .help(checkableCount == 0
                       ? "No Intel-only Mac apps to check"
-                      : "Look for Apple Silicon versions of the \(checkableCount) Intel-only Mac apps in Homebrew, their update feeds and the App Store")
+                      : "Look for Apple Silicon versions of the \(checkableCount) Intel-only Mac apps in Homebrew, their update feeds and the App Store (⇧⌘U)")
             }
             ToolbarItem {
                 Button {
@@ -91,7 +101,7 @@ struct AppListView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(model.isScanningApps)
-                .help("Rescan /Applications")
+                .help("Rescan the app folders (⌘R)")
             }
         }
         .task {
@@ -104,11 +114,19 @@ struct AppListView: View {
             Button(pendingUpdates.count == 1 ? "Update" : "Update All") {
                 let apps = pendingUpdates
                 pendingUpdates = []
-                Task { for app in apps { await model.update(app) } }
+                Task { for app in apps { await model.update(app, undoManager: undoManager) } }
             }
             Button("Cancel", role: .cancel) { pendingUpdates = [] }
         } message: {
             Text(confirmationMessage)
+        }
+        .alert("Couldn't Put Back the Old Version", isPresented: Binding(
+            get: { model.putBackError != nil },
+            set: { if !$0 { model.putBackError = nil } }
+        )) {
+            Button("OK", role: .cancel) { model.putBackError = nil }
+        } message: {
+            Text(model.putBackError ?? "")
         }
     }
 
@@ -136,7 +154,7 @@ struct AppListView: View {
     /// App Store updates open the store right away; the others ask first.
     private func requestUpdate(_ app: AppItem) {
         if case .appStore = model.updateMethod(for: app) {
-            Task { await model.update(app) }
+            Task { await model.update(app, undoManager: undoManager) }
         } else {
             pendingUpdates = [app]
         }
@@ -201,22 +219,33 @@ struct AppListView: View {
                     .truncationMode(.middle)
             }
         }
-        .contextMenu(forSelectionType: AppItem.ID.self) { selectedIDs in
-            if let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) {
-                AppActions(model: model, app: app) { requestUpdate(app) }
-            }
-        } primaryAction: { selectedIDs in
-            guard let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) else { return }
+        .contextMenu(forSelectionType: AppItem.ID.self, menu: actions(for:), primaryAction: open(_:))
+    }
+
+    /// The context menu for the clicked row, or for every selected row.
+    @ViewBuilder
+    private func actions(for ids: Set<AppItem.ID>) -> some View {
+        let selected = apps.filter { ids.contains($0.id) }
+        if selected.count == 1, let app = selected.first {
+            AppActions(model: model, app: app) { requestUpdate(app) }
+        } else if selected.count > 1 {
+            MultiAppActions(model: model, apps: selected) { pendingUpdates = $0 }
+        }
+    }
+
+    private func open(_ ids: Set<AppItem.ID>) {
+        for app in apps where ids.contains(app.id) {
             NSWorkspace.shared.open(URL(fileURLWithPath: app.path))
         }
     }
 
     private var groupedView: some View {
-        List {
+        List(selection: $selection) {
             ForEach(groupedApps, id: \.architecture) { group in
                 DisclosureGroup(isExpanded: expandedBinding(for: group.architecture)) {
                     ForEach(group.items) { app in
                         AppRow(model: model, app: app) { requestUpdate(app) }
+                            .tag(app.id)
                     }
                 } label: {
                     HStack {
@@ -229,6 +258,7 @@ struct AppListView: View {
                 }
             }
         }
+        .contextMenu(forSelectionType: AppItem.ID.self, menu: actions(for:), primaryAction: open(_:))
     }
 
     private func expandedBinding(for architecture: Architecture) -> Binding<Bool> {
@@ -312,6 +342,12 @@ struct AppActions: View {
         Button("Copy Path") {
             FileActions.copyToPasteboard(app.path)
         }
+        if model.canPutBack(app) {
+            Divider()
+            Button("Put Back Previous Version") {
+                Task { await model.putBack(app) }
+            }
+        }
         if app.architecture == .intel && !app.isCrossOverLauncher {
             Divider()
             if let method = model.updateMethod(for: app) {
@@ -338,6 +374,48 @@ struct AppActions: View {
                 Button("Copy Homebrew Install Command") {
                     FileActions.copyToPasteboard("brew install --cask \(token)")
                 }
+            }
+        }
+    }
+}
+
+/// The actions on several selected apps at once.
+struct MultiAppActions: View {
+    let model: AppModel
+    let apps: [AppItem]
+    let onUpdate: ([AppItem]) -> Void
+
+    private var updatable: [AppItem] {
+        let ids = Set(model.updatableApps.map(\.id))
+        return apps.filter { ids.contains($0.id) }
+    }
+
+    private var checkable: [AppItem] {
+        apps.filter { $0.architecture == .intel && !$0.isCrossOverLauncher && model.check(for: $0) != .checking }
+    }
+
+    var body: some View {
+        Button("Open \(apps.count) Apps") {
+            for app in apps { NSWorkspace.shared.open(URL(fileURLWithPath: app.path)) }
+        }
+        Button("Reveal in Finder") {
+            NSWorkspace.shared.activateFileViewerSelecting(apps.map { URL(fileURLWithPath: $0.path) })
+        }
+        Button("Copy Paths") {
+            FileActions.copyToPasteboard(apps.map(\.path).joined(separator: "\n"))
+        }
+        if !updatable.isEmpty || !checkable.isEmpty {
+            Divider()
+        }
+        if !updatable.isEmpty {
+            Button(updatable.count == 1 ? "Update \(updatable[0].name)…" : "Update \(updatable.count) Apps…") {
+                onUpdate(updatable)
+            }
+            .disabled(model.isUpdating)
+        }
+        if !checkable.isEmpty {
+            Button("Check for Apple Silicon Versions") {
+                Task { await model.checkNativeVersions(only: checkable) }
             }
         }
     }

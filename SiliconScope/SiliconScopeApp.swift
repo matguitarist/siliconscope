@@ -13,7 +13,7 @@ struct SiliconScopeApp: App {
         Window("SiliconScope", id: "main") {
             ContentView(model: model)
                 .frame(minWidth: 760, minHeight: 480)
-                .onAppear { AppTheme.current.apply() }
+                .noInitialFocus()
         }
         .commands {
             AppCommands(model: model, appUpdater: appUpdater)
@@ -21,11 +21,13 @@ struct SiliconScopeApp: App {
 
         Window("SiliconScope Help", id: HelpView.windowID) {
             HelpView()
+                .noInitialFocus()
         }
         .commandsRemoved()  // opened from the Help menu, not listed under Window
 
         Settings {
             SettingsView(model: model)
         }
+        .windowResizability(.contentSize)  // each tab sizes the window to its form
     }
 }

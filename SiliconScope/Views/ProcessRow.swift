@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ProcessRow: View {
     let process: ProcessItem
-    var onQuit: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -25,15 +24,5 @@ struct ProcessRow: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .contextMenu {
-            Button("Reveal in Finder") {
-                FileActions.revealInFinder(path: process.path)
-            }
-            Button("Copy Path") {
-                FileActions.copyToPasteboard(process.path)
-            }
-            Divider()
-            Button("Quit Process…", role: .destructive, action: onQuit)
-        }
     }
 }

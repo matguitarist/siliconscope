@@ -8,6 +8,26 @@ import SwiftUI
 final class AppModel {
     var page: SidebarItem? = .apps
 
+    /// Bumped by View > Refresh on the Running Processes page; the page reloads when it changes.
+    private(set) var processRefreshRequest = 0
+
+    /// Rescans the page on screen (View > Refresh, ⌘R).
+    func refreshCurrentPage() {
+        switch page {
+        case .apps: Task { await scanApps() }
+        case .processes: processRefreshRequest += 1
+        case .log, nil: break
+        }
+    }
+
+    var canRefreshCurrentPage: Bool {
+        switch page {
+        case .apps: !isScanningApps
+        case .processes: true
+        case .log, nil: false
+        }
+    }
+
     private(set) var apps: [AppItem] = []
     private(set) var isScanningApps = false
     private(set) var hasScannedApps = false
@@ -18,6 +38,12 @@ final class AppModel {
 
     /// Updates installing or failed, by app path.
     private(set) var updates: [AppItem.ID: UpdateState] = [:]
+
+    /// Where the copy an update replaced went in the Trash, by app path, so the update can be undone.
+    private(set) var previousCopies: [AppItem.ID: URL] = [:]
+
+    /// Why putting an old copy back failed, shown in an alert.
+    var putBackError: String?
 
     let log = LogViewerModel(store: AppLog.store)
 
@@ -58,21 +84,30 @@ final class AppModel {
 
     var isUpdating: Bool { updates.values.contains { if case .running = $0 { true } else { false } } }
 
-    func update(_ app: AppItem) async {
+    func update(_ app: AppItem, undoManager: UndoManager? = nil) async {
         guard let method = updateMethod(for: app) else { return }
         if case .running = updates[app.id] { return }
         if case .appStore = method {
-            try? await AppInstaller.shared.install(method, for: app) { _ in }
+            _ = try? await AppInstaller.shared.install(method, for: app) { _ in }
             AppLog.post(.info, "Opened \(app.name) in the App Store", source: "App Store")
             return
         }
         updates[app.id] = .running("Starting…")
         let id = app.id
         do {
-            try await AppInstaller.shared.install(method, for: app) { [weak self] step in
+            let oldCopy = try await AppInstaller.shared.install(method, for: app) { [weak self] step in
                 self?.updates[id] = .running(step)
             }
             updates[id] = nil
+            if let oldCopy {
+                previousCopies[id] = oldCopy
+                undoManager?.registerUndo(withTarget: self) { model in
+                    MainActor.assumeIsolated {
+                        _ = Task { await model.putBack(app) }
+                    }
+                }
+                undoManager?.setActionName("Update \(app.name)")
+            }
             nativeChecks[id] = nil
             await scanApps()
             if let updated = apps.first(where: { $0.id == id }) {
@@ -89,6 +124,27 @@ final class AppModel {
     /// One after another: Homebrew allows a single install at a time.
     func updateAll() async {
         for app in updatableApps { await update(app) }
+    }
+
+    func canPutBack(_ app: AppItem) -> Bool { previousCopies[app.id] != nil }
+
+    /// Undoes an update: the new copy goes to the Trash and the replaced one comes back.
+    func putBack(_ app: AppItem) async {
+        guard let oldCopy = previousCopies[app.id] else { return }
+        if let running = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL?.path == app.path }) {
+            running.terminate()
+            for _ in 0..<50 where !running.isTerminated { try? await Task.sleep(for: .milliseconds(100)) }
+        }
+        do {
+            try await AppInstaller.shared.putBack(oldCopy: oldCopy, at: app.path)
+            previousCopies[app.id] = nil
+            AppLog.post(.info, "Put back the old copy of \(app.name); the updated one is in the Trash", source: "Update")
+            await scanApps()
+        } catch {
+            previousCopies[app.id] = nil
+            putBackError = "\(app.name) wasn't put back: \(error.localizedDescription)"
+            AppLog.post(.error, putBackError!, source: "Update")
+        }
     }
 
     func clearUpdateFailure(_ app: AppItem) { updates[app.id] = nil }

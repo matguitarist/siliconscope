@@ -23,6 +23,12 @@ struct SummaryChip: View {
     let tint: Color
     var isSelected: Bool = false
     var action: (() -> Void)?
+    @State private var isHovered = false
+
+    private var fill: Color {
+        if isSelected { return tint.opacity(isHovered ? 0.28 : 0.22) }
+        return Color.secondary.opacity(isHovered ? 0.18 : 0.12)
+    }
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 10)
@@ -36,13 +42,16 @@ struct SummaryChip: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(isSelected ? tint.opacity(0.22) : Color.secondary.opacity(0.12), in: shape)
+        .background(fill, in: shape)
         .overlay(shape.stroke(isSelected ? tint : .clear, lineWidth: 1.5))
 
         if let action {
             Button(action: action) { chip }
                 .buttonStyle(.plain)
                 .focusEffectDisabled()
+                .onHover { isHovered = $0 }
+                .animation(.easeOut(duration: 0.12), value: isHovered)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
         } else {
             chip
         }
