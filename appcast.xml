@@ -3,6 +3,16 @@
     <channel>
         <title>SiliconScope</title>
         <item>
+            <title>1.2.1</title>
+            <pubDate>Wed, 11 Nov 2026 22:21:29 -0500</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[- Fixed a crash that could happen after updating an app, or a moment after checking for Apple Silicon versions
+]]></description>
+            <enclosure url="https://github.com/matguitarist/siliconscope/releases/download/v1.2.1/SiliconScope-1.2.1.zip" length="2557715" type="application/octet-stream" sparkle:edSignature="VkLzsw4/ch1QW1UFdzoD0n5noMrgh721d/oG3TlAHS4FtX2voeivBO00BsqAiDwaNfIUbq844OhMVVyxMt9sBA=="/>
+        </item>
+        <item>
             <title>1.2.0</title>
             <pubDate>Wed, 11 Nov 2026 22:03:12 -0500</pubDate>
             <sparkle:version>3</sparkle:version>
