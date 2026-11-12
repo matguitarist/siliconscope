@@ -7,7 +7,7 @@ enum ListViewMode: String, CaseIterable, Identifiable {
 }
 
 struct AppListView: View {
-    @Environment(AppModel.self) private var model
+    let model: AppModel
     @State private var searchText = ""
     @State private var sortOrder = [KeyPathComparator(\AppItem.architecture)]
     @State private var selection: AppItem.ID?
@@ -182,7 +182,7 @@ struct AppListView: View {
                     HStack(spacing: 8) {
                         NativeCheckLabel(state: model.check(for: app))
                         Spacer(minLength: 0)
-                        UpdateControl(app: app) { requestUpdate(app) }
+                        UpdateControl(model: model, app: app) { requestUpdate(app) }
                     }
                 }
             }
@@ -203,7 +203,7 @@ struct AppListView: View {
         }
         .contextMenu(forSelectionType: AppItem.ID.self) { selectedIDs in
             if let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) {
-                AppActions(app: app) { requestUpdate(app) }
+                AppActions(model: model, app: app) { requestUpdate(app) }
             }
         } primaryAction: { selectedIDs in
             guard let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) else { return }
@@ -216,7 +216,7 @@ struct AppListView: View {
             ForEach(groupedApps, id: \.architecture) { group in
                 DisclosureGroup(isExpanded: expandedBinding(for: group.architecture)) {
                     ForEach(group.items) { app in
-                        AppRow(app: app) { requestUpdate(app) }
+                        AppRow(model: model, app: app) { requestUpdate(app) }
                     }
                 } label: {
                     HStack {
@@ -298,7 +298,7 @@ struct AppListView: View {
 
 /// The actions on one app, shared by the table's and the grouped list's context menus.
 struct AppActions: View {
-    @Environment(AppModel.self) private var model
+    let model: AppModel
     let app: AppItem
     let onUpdate: () -> Void
 
@@ -344,6 +344,5 @@ struct AppActions: View {
 }
 
 #Preview {
-    AppListView()
-        .environment(AppModel())
+    AppListView(model: AppModel())
 }

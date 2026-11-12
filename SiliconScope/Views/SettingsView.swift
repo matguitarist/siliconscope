@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 struct SettingsView: View {
+    let model: AppModel
     @AppStorage("settingsTab") private var tab = "general"  // reopens on the last tab
 
     var body: some View {
@@ -9,10 +10,10 @@ struct SettingsView: View {
             GeneralSettings()
                 .tabItem { Label("General", systemImage: "gearshape") }
                 .tag("general")
-            ScanningSettings()
+            ScanningSettings(model: model)
                 .tabItem { Label("Scanning", systemImage: "magnifyingglass") }
                 .tag("scanning")
-            NativeVersionSettings()
+            NativeVersionSettings(model: model)
                 .tabItem { Label("Apple Silicon Versions", systemImage: "arrow.down.app") }
                 .tag("native")
             UpdatesSettings()
@@ -53,7 +54,7 @@ private struct GeneralSettings: View {
 }
 
 private struct ScanningSettings: View {
-    @Environment(AppModel.self) private var model
+    let model: AppModel
     @AppStorage(Preferences.showCrossOverLaunchers) private var showCrossOverLaunchers = true
     @AppStorage(Preferences.refreshProcesses) private var refreshProcesses = false
     @State private var extraFolders = Preferences.extraFolders
@@ -118,7 +119,7 @@ private struct ScanningSettings: View {
 }
 
 private struct NativeVersionSettings: View {
-    @Environment(AppModel.self) private var model
+    let model: AppModel
     @AppStorage(Preferences.checkAfterScan) private var checkAfterScan = false
     @AppStorage(Preferences.useHomebrew) private var useHomebrew = true
     @AppStorage(Preferences.useUpdateFeeds) private var useUpdateFeeds = true

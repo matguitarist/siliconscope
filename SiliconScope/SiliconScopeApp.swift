@@ -11,8 +11,7 @@ struct SiliconScopeApp: App {
 
     var body: some Scene {
         Window("SiliconScope", id: "main") {
-            ContentView()
-                .environment(model)
+            ContentView(model: model)
                 .frame(minWidth: 760, minHeight: 480)
                 .onAppear { AppTheme.current.apply() }
         }
@@ -26,8 +25,7 @@ struct SiliconScopeApp: App {
         .commandsRemoved()  // opened from the Help menu, not listed under Window
 
         Settings {
-            SettingsView()
-                .environment(model)
+            SettingsView(model: model)
         }
     }
 }

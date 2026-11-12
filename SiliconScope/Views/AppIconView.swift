@@ -55,7 +55,7 @@ struct NativeCheckLabel: View {
 
 /// The Update button for an app with a version to install, and how that update is going.
 struct UpdateControl: View {
-    @Environment(AppModel.self) private var model
+    let model: AppModel
     let app: AppItem
     let onUpdate: () -> Void
 

@@ -18,10 +18,9 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 }
 
 struct ContentView: View {
-    @Environment(AppModel.self) private var model
+    @Bindable var model: AppModel
 
     var body: some View {
-        @Bindable var model = model
         NavigationSplitView {
             List(selection: $model.page) {
                 Section {
@@ -38,7 +37,7 @@ struct ContentView: View {
         } detail: {
             switch model.page {
             case .apps:
-                AppListView()
+                AppListView(model: model)
             case .processes:
                 ProcessListView()
             case .log:
@@ -61,6 +60,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
-        .environment(AppModel())
+    ContentView(model: AppModel())
 }
