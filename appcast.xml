@@ -3,6 +3,20 @@
     <channel>
         <title>SiliconScope</title>
         <item>
+            <title>1.2.0</title>
+            <pubDate>Wed, 11 Nov 2026 22:03:12 -0500</pubDate>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[- Update Intel apps right from the list: an Update button next to every app with an Apple Silicon version or an update, and Update All… for all of them at once
+- Homebrew apps install with brew; apps with their own update feed download, are checked against the developer's signatures, and replace the old copy, which goes to the Trash
+- App Store apps open their store page
+- When Homebrew needs your password, Finish Update in Terminal does the rest
+- After an update, the list and the log show what the app is now: Universal or Apple Silicon
+]]></description>
+            <enclosure url="https://github.com/matguitarist/siliconscope/releases/download/v1.2.0/SiliconScope-1.2.0.zip" length="2561161" type="application/octet-stream" sparkle:edSignature="jnXVCGQ1/VjAlLLQUY+OapLSWA2BkDEcrM/JZ2Ks5gclm/q4iLFFGCeO3UbCVCRSnhKZRKpm8tMkTsbnF30uDw=="/>
+        </item>
+        <item>
             <title>1.1.0</title>
             <pubDate>Wed, 11 Nov 2026 21:41:10 -0500</pubDate>
             <sparkle:version>2</sparkle:version>
