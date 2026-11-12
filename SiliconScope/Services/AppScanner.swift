@@ -1,4 +1,4 @@
-import AppKit
+import Foundation
 
 /// Scans the filesystem for installed applications and classifies each one's architecture.
 enum AppScanner {
@@ -47,25 +47,31 @@ enum AppScanner {
 
     private static func makeAppItem(path: String) -> AppItem? {
         let url = URL(fileURLWithPath: path)
-        let icon = NSWorkspace.shared.icon(forFile: path)
         let fallbackName = (path as NSString).lastPathComponent.replacingOccurrences(of: ".app", with: "")
 
         guard let bundle = Bundle(url: url) else {
-            return AppItem(name: fallbackName, bundleIdentifier: nil, version: nil, path: path, architecture: .unknown, icon: icon)
+            return AppItem(name: fallbackName, bundleIdentifier: nil, version: nil, path: path,
+                           architecture: .unknown, updateFeedURL: nil, isFromAppStore: false)
         }
 
         let name = (bundle.infoDictionary?["CFBundleName"] as? String)
             ?? (bundle.infoDictionary?["CFBundleDisplayName"] as? String)
             ?? fallbackName
         let version = bundle.infoDictionary?["CFBundleShortVersionString"] as? String
+        let feedURL = (bundle.infoDictionary?["SUFeedURL"] as? String).flatMap(URL.init(string:))
+        let isFromAppStore = FileManager.default.fileExists(
+            atPath: url.appending(path: "Contents/_MASReceipt/receipt").path)
+
+        func item(_ architecture: Architecture) -> AppItem {
+            AppItem(name: name, bundleIdentifier: bundle.bundleIdentifier, version: version, path: path,
+                    architecture: architecture, updateFeedURL: feedURL, isFromAppStore: isFromAppStore)
+        }
 
         guard let executableURL = bundle.executableURL else {
-            return AppItem(name: name, bundleIdentifier: bundle.bundleIdentifier, version: version, path: path, architecture: .unknown, icon: icon)
+            return item(.unknown)
         }
 
         let cpuTypes = MachOReader.cpuTypes(atPath: executableURL.path)
-        let architecture = MachOReader.architecture(forCPUTypes: cpuTypes)
-
-        return AppItem(name: name, bundleIdentifier: bundle.bundleIdentifier, version: version, path: path, architecture: architecture, icon: icon)
+        return item(MachOReader.architecture(forCPUTypes: cpuTypes))
     }
 }

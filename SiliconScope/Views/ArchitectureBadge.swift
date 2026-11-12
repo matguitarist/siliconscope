@@ -42,6 +42,7 @@ struct SummaryChip: View {
         if let action {
             Button(action: action) { chip }
                 .buttonStyle(.plain)
+                .focusEffectDisabled()
         } else {
             chip
         }

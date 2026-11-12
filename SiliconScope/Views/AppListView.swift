@@ -7,19 +7,24 @@ enum ListViewMode: String, CaseIterable, Identifiable {
 }
 
 struct AppListView: View {
-    @State private var apps: [AppItem] = []
-    @State private var isLoading = true
+    @Environment(AppModel.self) private var model
     @State private var searchText = ""
     @State private var sortOrder = [KeyPathComparator(\AppItem.architecture)]
     @State private var selection: AppItem.ID?
     @State private var architectureFilter: Architecture?
+    @State private var showOnlyNativeAvailable = false
     @State private var viewMode: ListViewMode = .table
     @State private var expandedGroups: Set<Architecture> = Set(Architecture.allCases)
+
+    private var apps: [AppItem] { model.apps }
 
     private var filteredApps: [AppItem] {
         var base = apps
         if let architectureFilter {
             base = base.filter { $0.architecture == architectureFilter }
+        }
+        if showOnlyNativeAvailable {
+            base = base.filter { nativeVerdict(of: $0) == .nativeAvailable }
         }
         if !searchText.isEmpty {
             base = base.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
@@ -37,8 +42,14 @@ struct AppListView: View {
     }
 
     private var intelCount: Int { apps.filter { $0.architecture == .intel }.count }
+    /// Intel apps a Mac version could exist for (not CrossOver's Windows launchers).
+    private var checkableCount: Int { apps.filter { $0.architecture == .intel && !$0.isCrossOverLauncher }.count }
     private var universalCount: Int { apps.filter { $0.architecture == .universal }.count }
     private var appleSiliconCount: Int { apps.filter { $0.architecture == .appleSilicon }.count }
+
+    private func nativeVerdict(of app: AppItem) -> NativeCheck.Verdict? {
+        if case .done(let check) = model.check(for: app) { check.verdict } else { nil }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,22 +70,33 @@ struct AppListView: View {
             }
             ToolbarItem {
                 Button {
-                    Task { await loadApps() }
+                    Task { await model.checkNativeVersions() }
+                } label: {
+                    Label("Check for Apple Silicon Versions", systemImage: "arrow.down.app")
+                }
+                .disabled(model.isScanningApps || model.isCheckingNative || checkableCount == 0)
+                .help(checkableCount == 0
+                      ? "No Intel-only Mac apps to check"
+                      : "Look for Apple Silicon versions of the \(checkableCount) Intel-only Mac apps in Homebrew, their update feeds and the App Store")
+            }
+            ToolbarItem {
+                Button {
+                    Task { await model.scanApps() }
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                .disabled(isLoading)
+                .disabled(model.isScanningApps)
                 .help("Rescan /Applications")
             }
         }
         .task {
-            await loadApps()
+            await model.scanAppsIfNeeded()
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        if isLoading {
+        if model.isScanningApps && apps.isEmpty {
             ProgressView("Scanning Applications…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if apps.isEmpty {
@@ -96,18 +118,23 @@ struct AppListView: View {
         Table(filteredApps, selection: $selection, sortOrder: $sortOrder) {
             TableColumn("Name", value: \.name) { app in
                 HStack(spacing: 8) {
-                    Image(nsImage: app.icon)
-                        .resizable()
-                        .frame(width: 20, height: 20)
+                    AppIconView(path: app.path)
                     Text(app.name)
                 }
             }
-            .width(min: 180, ideal: 260)
+            .width(min: 180, ideal: 240)
 
             TableColumn("Architecture", value: \.architecture) { app in
                 ArchitectureBadge(architecture: app.architecture)
             }
-            .width(150)
+            .width(130)
+
+            TableColumn("Apple Silicon Version") { app in
+                if app.architecture == .intel {
+                    NativeCheckLabel(state: model.check(for: app))
+                }
+            }
+            .width(min: 130, ideal: 150)
 
             TableColumn("Version", value: \.versionSortKey) { app in
                 Text(app.version ?? "—")
@@ -124,15 +151,7 @@ struct AppListView: View {
         }
         .contextMenu(forSelectionType: AppItem.ID.self) { selectedIDs in
             if let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) {
-                Button("Open") {
-                    NSWorkspace.shared.open(URL(fileURLWithPath: app.path))
-                }
-                Button("Reveal in Finder") {
-                    FileActions.revealInFinder(path: app.path)
-                }
-                Button("Copy Path") {
-                    FileActions.copyToPasteboard(app.path)
-                }
+                AppActions(app: app)
             }
         } primaryAction: { selectedIDs in
             guard let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) else { return }
@@ -184,14 +203,27 @@ struct AppListView: View {
             SummaryChip(count: appleSiliconCount, label: "Apple Silicon", tint: .green, isSelected: architectureFilter == .appleSilicon) {
                 toggleFilter(.appleSilicon)
             }
-            if architectureFilter != nil {
-                Button("Clear Filter") { architectureFilter = nil }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if model.nativeAvailableCount > 0 || showOnlyNativeAvailable {
+                SummaryChip(count: model.nativeAvailableCount, label: "Native Version Available", tint: .green,
+                            isSelected: showOnlyNativeAvailable) {
+                    showOnlyNativeAvailable.toggle()
+                }
+                .help("Intel-only apps with a version that runs natively on Apple Silicon")
+            }
+            if architectureFilter != nil || showOnlyNativeAvailable {
+                Button("Clear Filter") {
+                    architectureFilter = nil
+                    showOnlyNativeAvailable = false
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Spacer()
-            if !isLoading {
+            if model.isScanningApps && !apps.isEmpty {
+                ProgressView().controlSize(.small)
+            }
+            if !apps.isEmpty {
                 Text("\(filteredApps.count) of \(apps.count) apps")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -203,16 +235,45 @@ struct AppListView: View {
     private func toggleFilter(_ architecture: Architecture) {
         architectureFilter = (architectureFilter == architecture) ? nil : architecture
     }
+}
 
-    private func loadApps() async {
-        isLoading = true
-        apps = await Task.detached(priority: .userInitiated) {
-            AppScanner.scan()
-        }.value
-        isLoading = false
+/// The actions on one app, shared by the table's and the grouped list's context menus.
+struct AppActions: View {
+    @Environment(AppModel.self) private var model
+    let app: AppItem
+
+    var body: some View {
+        Button("Open") {
+            NSWorkspace.shared.open(URL(fileURLWithPath: app.path))
+        }
+        Button("Reveal in Finder") {
+            FileActions.revealInFinder(path: app.path)
+        }
+        Button("Copy Path") {
+            FileActions.copyToPasteboard(app.path)
+        }
+        if app.architecture == .intel && !app.isCrossOverLauncher {
+            Divider()
+            Button("Check for Apple Silicon Version") {
+                Task { await model.checkNativeVersions(only: [app]) }
+            }
+            .disabled(model.check(for: app) == .checking)
+            if case .done(let check) = model.check(for: app), let url = check.url {
+                Button(check.source == .appStore ? "Open in App Store" : "Open Download Page") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            if case .done(let check) = model.check(for: app), check.source == .homebrew,
+               check.verdict == .nativeAvailable, let token = check.homebrewToken {
+                Button("Copy Homebrew Install Command") {
+                    FileActions.copyToPasteboard("brew install --cask \(token)")
+                }
+            }
+        }
     }
 }
 
 #Preview {
     AppListView()
+        .environment(AppModel())
 }

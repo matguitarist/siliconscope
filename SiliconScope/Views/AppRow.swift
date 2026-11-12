@@ -1,13 +1,12 @@
 import SwiftUI
 
 struct AppRow: View {
+    @Environment(AppModel.self) private var model
     let app: AppItem
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(nsImage: app.icon)
-                .resizable()
-                .frame(width: 28, height: 28)
+            AppIconView(path: app.path, size: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(app.name)
                 Text(app.path)
@@ -17,6 +16,10 @@ struct AppRow: View {
                     .truncationMode(.middle)
             }
             Spacer()
+            if app.architecture == .intel, let state = model.check(for: app) {
+                NativeCheckLabel(state: state)
+                    .font(.caption)
+            }
             if let version = app.version {
                 Text(version)
                     .font(.caption)
@@ -26,15 +29,7 @@ struct AppRow: View {
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .contextMenu {
-            Button("Open") {
-                NSWorkspace.shared.open(URL(fileURLWithPath: app.path))
-            }
-            Button("Reveal in Finder") {
-                FileActions.revealInFinder(path: app.path)
-            }
-            Button("Copy Path") {
-                FileActions.copyToPasteboard(app.path)
-            }
+            AppActions(app: app)
         }
     }
 }

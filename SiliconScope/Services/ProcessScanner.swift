@@ -52,10 +52,10 @@ enum ProcessScanner {
     }
 
     private static func executablePath(for pid: Int32) -> String? {
-        var buffer = [Int8](repeating: 0, count: maxPathInfoSize)
+        var buffer = [UInt8](repeating: 0, count: maxPathInfoSize)
         let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
         guard length > 0 else { return nil }
-        return String(cString: buffer)
+        return String(decoding: buffer.prefix(Int(length)), as: UTF8.self)
     }
 
     private static func isTranslated(pid: Int32) -> Bool {
