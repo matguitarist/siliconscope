@@ -3,6 +3,7 @@ import SwiftUI
 struct AppRow: View {
     @Environment(AppModel.self) private var model
     let app: AppItem
+    let onUpdate: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -19,6 +20,7 @@ struct AppRow: View {
             if app.architecture == .intel, let state = model.check(for: app) {
                 NativeCheckLabel(state: state)
                     .font(.caption)
+                UpdateControl(app: app, onUpdate: onUpdate)
             }
             if let version = app.version {
                 Text(version)
@@ -29,7 +31,7 @@ struct AppRow: View {
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .contextMenu {
-            AppActions(app: app)
+            AppActions(app: app, onUpdate: onUpdate)
         }
     }
 }

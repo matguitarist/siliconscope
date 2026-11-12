@@ -63,9 +63,12 @@ enum AppScanner {
         let isFromAppStore = FileManager.default.fileExists(
             atPath: url.appending(path: "Contents/_MASReceipt/receipt").path)
 
+        let feedKey = bundle.infoDictionary?["SUPublicEDKey"] as? String
+
         func item(_ architecture: Architecture) -> AppItem {
             AppItem(name: name, bundleIdentifier: bundle.bundleIdentifier, version: version, path: path,
-                    architecture: architecture, updateFeedURL: feedURL, isFromAppStore: isFromAppStore)
+                    architecture: architecture, updateFeedURL: feedURL, updateFeedPublicKey: feedKey,
+                    isFromAppStore: isFromAppStore)
         }
 
         guard let executableURL = bundle.executableURL else {

@@ -16,6 +16,9 @@ final class AppModel {
     private(set) var nativeChecks: [AppItem.ID: NativeCheckState] = [:]
     private(set) var isCheckingNative = false
 
+    /// Updates installing or failed, by app path.
+    private(set) var updates: [AppItem.ID: UpdateState] = [:]
+
     let log = LogViewerModel(store: AppLog.store)
 
     var intelApps: [AppItem] { apps.filter { $0.architecture == .intel } }
@@ -27,6 +30,68 @@ final class AppModel {
     }
 
     func check(for app: AppItem) -> NativeCheckState? { nativeChecks[app.id] }
+
+    // MARK: - Updating
+
+    enum UpdateState: Equatable {
+        case running(String)
+        case failed(String, terminalCommand: String?)
+    }
+
+    func updateState(for app: AppItem) -> UpdateState? { updates[app.id] }
+
+    /// How the Update button would install the version found for `app`.
+    func updateMethod(for app: AppItem) -> UpdateMethod? {
+        guard case .done(let check) = nativeChecks[app.id] else { return nil }
+        return check.method
+    }
+
+    /// Apps whose update SiliconScope installs itself (App Store ones open the store instead).
+    var updatableApps: [AppItem] {
+        apps.filter { app in
+            switch updateMethod(for: app) {
+            case .homebrew, .download: if case .running = updates[app.id] { false } else { true }
+            case .appStore, nil: false
+            }
+        }
+    }
+
+    var isUpdating: Bool { updates.values.contains { if case .running = $0 { true } else { false } } }
+
+    func update(_ app: AppItem) async {
+        guard let method = updateMethod(for: app) else { return }
+        if case .running = updates[app.id] { return }
+        if case .appStore = method {
+            try? await AppInstaller.shared.install(method, for: app) { _ in }
+            AppLog.post(.info, "Opened \(app.name) in the App Store", source: "App Store")
+            return
+        }
+        updates[app.id] = .running("Starting…")
+        let id = app.id
+        do {
+            try await AppInstaller.shared.install(method, for: app) { [weak self] step in
+                self?.updates[id] = .running(step)
+            }
+            updates[id] = nil
+            nativeChecks[id] = nil
+            await scanApps()
+            if let updated = apps.first(where: { $0.id == id }) {
+                let level: LogLevel = updated.architecture == .intel ? .warning : .info
+                AppLog.post(level, "\(updated.name) \(updated.version ?? "") is now \(updated.architecture.label)", source: "Update")
+            }
+        } catch {
+            let command = (error as? InstallError)?.terminalCommand
+            updates[id] = .failed(error.localizedDescription, terminalCommand: command)
+            AppLog.post(.error, "\(app.name) wasn't updated: \(error.localizedDescription)", source: "Update")
+        }
+    }
+
+    /// One after another: Homebrew allows a single install at a time.
+    func updateAll() async {
+        for app in updatableApps { await update(app) }
+    }
+
+    func clearUpdateFailure(_ app: AppItem) { updates[app.id] = nil }
 
     // MARK: - Scanning
 

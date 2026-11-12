@@ -4,7 +4,7 @@
 import SwiftUI
 
 enum HelpTopic: String, CaseIterable, Identifiable {
-    case gettingStarted, architectures, installedApps, nativeVersions, processes, log, settings, privacy, shortcuts, troubleshooting
+    case gettingStarted, architectures, installedApps, nativeVersions, updating, processes, log, settings, privacy, shortcuts, troubleshooting
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .architectures: "Intel, Universal & Apple Silicon"
         case .installedApps: "Installed Apps"
         case .nativeVersions: "Finding Apple Silicon Versions"
+        case .updating: "Updating Apps"
         case .processes: "Running Processes"
         case .log: "Log"
         case .settings: "Settings"
@@ -29,6 +30,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .architectures: "cpu"
         case .installedApps: "square.grid.2x2"
         case .nativeVersions: "arrow.down.app"
+        case .updating: "arrow.triangle.2.circlepath"
         case .processes: "waveform.path.ecg"
         case .log: "doc.text.magnifyingglass"
         case .settings: "gearshape"
@@ -106,7 +108,15 @@ struct HelpView: View {
             Term("Update", color: .blue, "A newer version is out, but its source doesn't say whether it's native. Updating is worth a try.")
             Term("Still Intel", color: .orange, "The newest version still needs Rosetta.")
             Term("Not Found", color: .gray, "None of the sources knows the app. Games and in-house tools are often in this case; check the developer's website.")
-            Paragraph("Hold the pointer over a result for where it came from. Every result is also written to the **Log**.")
+            Paragraph("Hold the pointer over a result for where it came from. Every result is also written to the **Log**. Apps with a version to install get an **Update** button: see **Updating Apps**.")
+
+        case .updating:
+            Paragraph("Click **Update** next to an app, or **Update All…** above the list, to install the version SiliconScope found. It always asks first, and quits the app if it's open. How it installs depends on where the version came from:")
+            Term("Homebrew", color: .orange, "Runs **brew upgrade** when Homebrew already manages the app, or **brew install --cask --force**, which puts the Apple Silicon version in /Applications in place of yours.")
+            Term("The app's update feed", color: .teal, "Downloads the new version, checks it's signed with the app's own update key and by the same developer as your copy, and only then moves your copy to the Trash and puts the new one in its place.")
+            Term("App Store", color: .blue, "The button reads **App Store** and opens the app's page, where you update it.")
+            Paragraph("When an update fails, the button becomes **Retry**; hold the pointer over it for the reason. Some Homebrew apps need your administrator password: right-click and choose **Finish Update in Terminal**.")
+            Paragraph("After an update, SiliconScope rescans and the **Log** says what the app is now: Universal or Apple Silicon.")
 
         case .processes:
             Paragraph("**Running Processes** asks macOS which processes it is translating with Rosetta right now. This is what is actually running, not what the app on disk contains: a universal app opened with **Open using Rosetta** shows up as Rosetta here.")
@@ -126,6 +136,7 @@ struct HelpView: View {
         case .privacy:
             Paragraph("SiliconScope reads app bundles and the process list on your Mac. It sends nothing about your Mac anywhere.")
             Paragraph("Checking for Apple Silicon versions downloads Homebrew's public list (the same for everyone) and each app's own update feed. For apps from the App Store, it asks Apple's store about their app IDs. Each source can be turned off in **Settings > Apple Silicon Versions**.")
+            Paragraph("Updating downloads only from the address the app's own feed or Homebrew gives, and installs nothing whose signatures don't match the app you have.")
 
         case .shortcuts:
             Shortcut("⌘1, ⌘2, ⌘3", "Installed Apps, Running Processes, Log")
@@ -140,6 +151,7 @@ struct HelpView: View {
             Term("An app is missing", color: .secondary, "Only /Applications, ~/Applications and two folders inside them are scanned. Add the app's folder in **Settings > Scanning**.")
             Term("“Check Failed”", color: .secondary, "A source couldn't be reached: hold the pointer over the result, or look in the **Log**. Check your connection and try again.")
             Term("A result looks wrong", color: .secondary, "Homebrew's list can lag behind an app's own releases. Download it again in **Settings > Apple Silicon Versions**, and report the app with **Help > Report a Problem**.")
+            Term("An update fails", color: .secondary, "Hold the pointer over **Retry** for the reason. A copy owned by another user, or a Homebrew app that needs a password, can be finished with **Finish Update in Terminal** in the app's right-click menu.")
             Term("Quit Process fails", color: .secondary, "Processes that belong to macOS or another user can't be quit from SiliconScope.")
         }
     }

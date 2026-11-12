@@ -19,6 +19,8 @@ Swift 6 language mode, zero warnings. macOS 14+.
   the app's Sparkle feed (`sparkle:hardwareRequirements`), the App Store lookup (App Store apps only).
   Casks are matched by app file name *and* bundle ID, since names collide (Cemu vs CEmu).
   CrossOver launchers (`com.codeweavers.CrossOverHelper*`) are Windows programs: never checked.
+- `Services/AppInstaller` installs a found version (the Update button): brew upgrade/install --force,
+  or the feed's archive after EdDSA (app's SUPublicEDKey) + code signature with the same Team ID; old copy to Trash.
 - Logging: `AppLog.post` → LogKit `LogStore` (~/Library/Logs/SiliconScope), shown on the Log page.
 - Updates: Sparkle via `AppUpdater`; key account `siliconscope` in the login Keychain.
 - Settings keys live in `Preferences`; Help topics in `Views/HelpView.swift` (update them with every feature).

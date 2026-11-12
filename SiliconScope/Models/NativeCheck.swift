@@ -32,6 +32,8 @@ struct NativeCheck: Sendable, Equatable {
     let detail: String
     /// The Homebrew cask that installs it, for `brew install --cask`.
     var homebrewToken: String? = nil
+    /// How the Update button installs the version found, when it can.
+    var method: UpdateMethod? = nil
 
     static let notFound = NativeCheck(
         verdict: .unknown, latestVersion: nil, source: nil, url: nil,
@@ -69,6 +71,23 @@ struct NativeCheck: Sendable, Equatable {
         case .unknown, .windowsApp: .secondary
         }
     }
+}
+
+/// How SiliconScope can install a version it found.
+enum UpdateMethod: Sendable, Equatable {
+    /// `brew upgrade` / `brew install --cask --force` this cask.
+    case homebrew(token: String)
+    /// Download the archive the app's Sparkle feed lists and swap it in.
+    case download(SparkleDownload)
+    /// Open the app's page in the App Store, which does the update.
+    case appStore(URL)
+}
+
+struct SparkleDownload: Sendable, Equatable {
+    let url: URL
+    let version: String
+    /// The archive's EdDSA signature (`sparkle:edSignature`), checked against the app's SUPublicEDKey.
+    let edSignature: String?
 }
 
 /// Where a native-version check stands for one app.

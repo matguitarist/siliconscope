@@ -12,6 +12,8 @@ struct AppItem: Identifiable, Sendable, Hashable {
     let architecture: Architecture
     /// The app's Sparkle update feed (`SUFeedURL`), when it has one.
     let updateFeedURL: URL?
+    /// The key its Sparkle updates are signed with (`SUPublicEDKey`), when it has one.
+    var updateFeedPublicKey: String? = nil
     /// Installed from the Mac App Store (the bundle carries a receipt).
     let isFromAppStore: Bool
 

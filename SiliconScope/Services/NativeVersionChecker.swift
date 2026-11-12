@@ -87,7 +87,7 @@ actor NativeVersionChecker {
         return NativeCheck(
             verdict: .nativeAvailable, latestVersion: newestVersion, source: .homebrew, url: cask.homepage,
             detail: "Homebrew's cask “\(cask.token)” \(version) \(how). Install it with: brew install --cask \(cask.token)",
-            homebrewToken: cask.token)
+            homebrewToken: cask.token, method: .homebrew(token: cask.token))
     }
 
     nonisolated static var caskCacheURL: URL { URL.cachesDirectory.appending(path: "SiliconScope/cask.json") }
@@ -134,15 +134,19 @@ actor NativeVersionChecker {
         let items = AppcastParser.items(in: data)
         guard let newest = items.max(by: { !Self.isNewer($0.version, than: $1.version) }) else { return nil }
 
+        let method = newest.download.map {
+            UpdateMethod.download(SparkleDownload(url: $0, version: newest.version, edSignature: newest.edSignature))
+        }
         if newest.hardwareRequirements.contains(where: { $0.lowercased().contains("arm64") }) {
             return NativeCheck(
                 verdict: .nativeAvailable, latestVersion: newest.version, source: .sparkle, url: newest.link ?? newest.download,
-                detail: "\(app.name)'s update feed says \(newest.version) is built for Apple Silicon.")
+                detail: "\(app.name)'s update feed says \(newest.version) is built for Apple Silicon.", method: method)
         }
         guard let installed = app.version, Self.isNewer(newest.version, than: installed) else { return nil }
         return NativeCheck(
             verdict: .updateAvailable, latestVersion: newest.version, source: .sparkle, url: newest.link ?? newest.download,
-            detail: "\(app.name) \(newest.version) is out (you have \(installed)). Its feed doesn't say whether it runs natively; updating often brings Apple Silicon support.")
+            detail: "\(app.name) \(newest.version) is out (you have \(installed)). Its feed doesn't say whether it runs natively; updating often brings Apple Silicon support.",
+            method: method)
     }
 
     // MARK: - App Store
@@ -161,10 +165,11 @@ actor NativeVersionChecker {
         guard let result = try JSONDecoder().decode(Lookup.self, from: data).results.first,
               let latest = result.version, let installed = app.version,
               Self.isNewer(latest, than: installed) else { return nil }
+        let storeURL = result.trackViewUrl.flatMap(URL.init(string:))
         return NativeCheck(
-            verdict: .updateAvailable, latestVersion: latest, source: .appStore,
-            url: result.trackViewUrl.flatMap(URL.init(string:)),
-            detail: "The App Store has \(app.name) \(latest) (you have \(installed)). Update it from the App Store.")
+            verdict: .updateAvailable, latestVersion: latest, source: .appStore, url: storeURL,
+            detail: "The App Store has \(app.name) \(latest) (you have \(installed)). Update it from the App Store.",
+            method: storeURL.map(UpdateMethod.appStore))
     }
 
     // MARK: - Helpers
@@ -287,6 +292,7 @@ enum AppcastParser {
         var hardwareRequirements: [String] = []
         var link: URL?
         var download: URL?
+        var edSignature: String?
     }
 
     static func items(in data: Data) -> [Item] {
@@ -316,6 +322,7 @@ enum AppcastParser {
                 }
                 if let build = attributes["sparkle:version"] { buildVersion = build }
                 current?.download = attributes["url"].flatMap(URL.init(string:))
+                current?.edSignature = attributes["sparkle:edSignature"]
             default:
                 break
             }

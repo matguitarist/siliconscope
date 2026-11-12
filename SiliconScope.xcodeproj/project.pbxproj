@@ -10,6 +10,7 @@
 		100CC3E47B4E75C9B830BB84 /* ProcessItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75A6B2FE8F0469C7203D11E /* ProcessItem.swift */; };
 		16E0BA27B2C17D0CB4A2425A /* ProcessRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 578BA0034ED49BEEC107C05A /* ProcessRow.swift */; };
 		19F87A559F7E2F1C1D13A149 /* ArchitectureBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2702B5F2E3EE913896BE044 /* ArchitectureBadge.swift */; };
+		1A2F99308FB2B8461F44768D /* AppInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE464EA43189AC42F264053D /* AppInstaller.swift */; };
 		1A8C8AA99175D851E394BB06 /* NativeVersionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8CA9A0406BD020E06EB069 /* NativeVersionChecker.swift */; };
 		241684C70AC71DC57DB34D33 /* Architecture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF16930A67FF276561AF67A /* Architecture.swift */; };
 		2C1408F64A6769F2E77A35B9 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C77EB5DEE2BBDCA31BF2279 /* Preferences.swift */; };
@@ -62,6 +63,7 @@
 		F75A6B2FE8F0469C7203D11E /* ProcessItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessItem.swift; sourceTree = "<group>"; };
 		F874824E003A4092E57950DB /* FileActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileActions.swift; sourceTree = "<group>"; };
 		FA8CA9A0406BD020E06EB069 /* NativeVersionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeVersionChecker.swift; sourceTree = "<group>"; };
+		FE464EA43189AC42F264053D /* AppInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInstaller.swift; sourceTree = "<group>"; };
 		FFD4498BF6CE532C340E0276 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -140,6 +142,7 @@
 		D27741F70E9012BED2AF327C /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				FE464EA43189AC42F264053D /* AppInstaller.swift */,
 				69F00C5913099C75666DD57D /* AppLog.swift */,
 				213441F6846285F1D9FEF2D1 /* AppScanner.swift */,
 				9DD471CA088306326EE3D899 /* AppUpdater.swift */,
@@ -218,6 +221,7 @@
 			files = (
 				9A170E6C7E4C0A97D4A048D3 /* AppCommands.swift in Sources */,
 				91769267719954E8470632FD /* AppIconView.swift in Sources */,
+				1A2F99308FB2B8461F44768D /* AppInstaller.swift in Sources */,
 				EED86654ED230FDF97360B6B /* AppItem.swift in Sources */,
 				EF95F3763E929A893743D8D4 /* AppListView.swift in Sources */,
 				2CA3C9F847F98153F7ABFB6F /* AppLog.swift in Sources */,

@@ -52,3 +52,63 @@ struct NativeCheckLabel: View {
         }
     }
 }
+
+/// The Update button for an app with a version to install, and how that update is going.
+struct UpdateControl: View {
+    @Environment(AppModel.self) private var model
+    let app: AppItem
+    let onUpdate: () -> Void
+
+    var body: some View {
+        switch model.updateState(for: app) {
+        case .running(let step):
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text(step).foregroundStyle(.secondary)
+            }
+        case .failed(let message, _):
+            Button("Retry", action: onUpdate)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Update failed: \(message)")
+        case nil:
+            if let method = model.updateMethod(for: app) {
+                Button(method.buttonTitle, action: onUpdate)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .help(method.help(for: app))
+            }
+        }
+    }
+}
+
+extension UpdateMethod {
+    var buttonTitle: String {
+        if case .appStore = self { "App Store" } else { "Update" }
+    }
+
+    func help(for app: AppItem) -> String {
+        switch self {
+        case .homebrew(let token):
+            AppInstaller.brewPath == nil
+                ? "Install Homebrew first (brew.sh), then this installs the cask “\(token)”."
+                : "Install the Apple Silicon version with Homebrew (brew install --cask \(token)), replacing this copy."
+        case .download(let download):
+            "Download \(app.name) \(download.version) from its update feed, check its signatures, and replace this copy (the old one goes to the Trash)."
+        case .appStore:
+            "Open \(app.name) in the App Store to update it there."
+        }
+    }
+
+    /// What the confirmation says will happen.
+    func confirmation(for app: AppItem) -> String {
+        switch self {
+        case .homebrew(let token):
+            "Homebrew installs the cask “\(token)” into /Applications, replacing \(app.name) \(app.version ?? ""). Homebrew may ask for your password in some cases; SiliconScope then offers to finish in Terminal."
+        case .download(let download):
+            "SiliconScope downloads \(app.name) \(download.version) from the developer's update feed, checks that it's signed by the same developer, and moves the current copy to the Trash."
+        case .appStore:
+            "The App Store opens on \(app.name)."
+        }
+    }
+}

@@ -16,6 +16,8 @@ struct AppListView: View {
     @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
     @AppStorage(Preferences.showCrossOverLaunchers) private var showCrossOverLaunchers = true
     @State private var expandedGroups: Set<Architecture> = Set(Architecture.allCases)
+    /// Apps waiting for the person to confirm their update.
+    @State private var pendingUpdates: [AppItem] = []
 
     private var apps: [AppItem] {
         showCrossOverLaunchers ? model.apps : model.apps.filter { !$0.isCrossOverLauncher }
@@ -95,6 +97,49 @@ struct AppListView: View {
         .task {
             await model.scanAppsIfNeeded()
         }
+        .confirmationDialog(confirmationTitle, isPresented: Binding(
+            get: { !pendingUpdates.isEmpty },
+            set: { if !$0 { pendingUpdates = [] } }
+        ), titleVisibility: .visible) {
+            Button(pendingUpdates.count == 1 ? "Update" : "Update All") {
+                let apps = pendingUpdates
+                pendingUpdates = []
+                Task { for app in apps { await model.update(app) } }
+            }
+            Button("Cancel", role: .cancel) { pendingUpdates = [] }
+        } message: {
+            Text(confirmationMessage)
+        }
+    }
+
+    private var confirmationTitle: String {
+        if pendingUpdates.count == 1, let app = pendingUpdates.first {
+            let version = model.check(for: app).flatMap { if case .done(let c) = $0 { c.latestVersion } else { nil } }
+            return "Update \(app.name)\(version.map { " to \($0)" } ?? "")?"
+        }
+        return "Update \(pendingUpdates.count) Apps?"
+    }
+
+    private var confirmationMessage: String {
+        let running = pendingUpdates.filter { app in
+            NSWorkspace.shared.runningApplications.contains { $0.bundleURL?.path == app.path }
+        }
+        var message = pendingUpdates.count == 1
+            ? (pendingUpdates.first.flatMap { app in model.updateMethod(for: app)?.confirmation(for: app) } ?? "")
+            : "\(pendingUpdates.map(\.name).formatted(.list(type: .and))) are installed one after another. Each old copy is replaced."
+        if !running.isEmpty {
+            message += "\n\n\(running.map(\.name).formatted(.list(type: .and))) will quit first."
+        }
+        return message
+    }
+
+    /// App Store updates open the store right away; the others ask first.
+    private func requestUpdate(_ app: AppItem) {
+        if case .appStore = model.updateMethod(for: app) {
+            Task { await model.update(app) }
+        } else {
+            pendingUpdates = [app]
+        }
     }
 
     @ViewBuilder
@@ -134,10 +179,14 @@ struct AppListView: View {
 
             TableColumn("Apple Silicon Version") { app in
                 if app.architecture == .intel {
-                    NativeCheckLabel(state: model.check(for: app))
+                    HStack(spacing: 8) {
+                        NativeCheckLabel(state: model.check(for: app))
+                        Spacer(minLength: 0)
+                        UpdateControl(app: app) { requestUpdate(app) }
+                    }
                 }
             }
-            .width(min: 130, ideal: 150)
+            .width(min: 190, ideal: 230)
 
             TableColumn("Version", value: \.versionSortKey) { app in
                 Text(app.version ?? "—")
@@ -154,7 +203,7 @@ struct AppListView: View {
         }
         .contextMenu(forSelectionType: AppItem.ID.self) { selectedIDs in
             if let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) {
-                AppActions(app: app)
+                AppActions(app: app) { requestUpdate(app) }
             }
         } primaryAction: { selectedIDs in
             guard let id = selectedIDs.first, let app = apps.first(where: { $0.id == id }) else { return }
@@ -167,7 +216,7 @@ struct AppListView: View {
             ForEach(groupedApps, id: \.architecture) { group in
                 DisclosureGroup(isExpanded: expandedBinding(for: group.architecture)) {
                     ForEach(group.items) { app in
-                        AppRow(app: app)
+                        AppRow(app: app) { requestUpdate(app) }
                     }
                 } label: {
                     HStack {
@@ -223,6 +272,13 @@ struct AppListView: View {
                 .foregroundStyle(.secondary)
             }
             Spacer()
+            if model.updatableApps.count > 1 {
+                Button("Update All (\(model.updatableApps.count))…") {
+                    pendingUpdates = model.updatableApps
+                }
+                .disabled(model.isUpdating)
+                .help("Install every Apple Silicon version and update found, one after another")
+            }
             if model.isScanningApps && !apps.isEmpty {
                 ProgressView().controlSize(.small)
             }
@@ -244,6 +300,7 @@ struct AppListView: View {
 struct AppActions: View {
     @Environment(AppModel.self) private var model
     let app: AppItem
+    let onUpdate: () -> Void
 
     var body: some View {
         Button("Open") {
@@ -257,6 +314,16 @@ struct AppActions: View {
         }
         if app.architecture == .intel && !app.isCrossOverLauncher {
             Divider()
+            if let method = model.updateMethod(for: app) {
+                Button(method.buttonTitle == "Update" ? "Update…" : "Open in App Store", action: onUpdate)
+                    .disabled({ if case .running = model.updateState(for: app) { true } else { false } }())
+            }
+            if case .failed(_, let command?) = model.updateState(for: app) {
+                Button("Finish Update in Terminal") {
+                    model.clearUpdateFailure(app)
+                    FileActions.runInTerminal(command)
+                }
+            }
             Button("Check for Apple Silicon Version") {
                 Task { await model.checkNativeVersions(only: [app]) }
             }
