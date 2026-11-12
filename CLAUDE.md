@@ -20,7 +20,8 @@ Swift 6 language mode, zero warnings. macOS 14+.
   Casks are matched by app file name *and* bundle ID, since names collide (Cemu vs CEmu).
   CrossOver launchers (`com.codeweavers.CrossOverHelper*`) are Windows programs: never checked.
 - Logging: `AppLog.post` → LogKit `LogStore` (~/Library/Logs/SiliconScope), shown on the Log page.
-- Updates: Sparkle via `AppUpdater`, off until `SUPublicEDKey` is in project.yml.
+- Updates: Sparkle via `AppUpdater`; key account `siliconscope` in the login Keychain.
+- Settings keys live in `Preferences`; Help topics in `Views/HelpView.swift` (update them with every feature).
 
 ## Release
 

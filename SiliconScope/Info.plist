@@ -28,5 +28,7 @@
 	<true/>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/matguitarist/siliconscope/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>V3AuVj1aiPqORcEOHkmaQsgdBadsZfSPsMm8a6ujzgM=</string>
 </dict>
 </plist>

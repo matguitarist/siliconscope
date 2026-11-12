@@ -7,7 +7,8 @@ struct ProcessListView: View {
     @State private var sortOrder = [KeyPathComparator(\ProcessItem.architecture)]
     @State private var selection: ProcessItem.ID?
     @State private var statusFilter: Architecture?
-    @State private var viewMode: ListViewMode = .table
+    @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
+    @AppStorage(Preferences.refreshProcesses) private var refreshProcesses = false
     @State private var expandedGroups: Set<Architecture> = Set(Architecture.allCases)
     @State private var processPendingQuit: ProcessItem?
     @State private var quitErrorMessage: String?
@@ -62,8 +63,13 @@ struct ProcessListView: View {
                 .help("Rescan running processes")
             }
         }
-        .task {
+        .task(id: refreshProcesses) {
             await loadProcesses()
+            while refreshProcesses, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { break }
+                await loadProcesses(quietly: true)
+            }
         }
         .confirmationDialog(
             "Quit \(processPendingQuit?.name ?? "Process")?",
@@ -248,12 +254,17 @@ struct ProcessListView: View {
         }
     }
 
-    private func loadProcesses() async {
-        isLoading = true
+    /// `quietly` keeps the current list on screen instead of showing the spinner.
+    private func loadProcesses(quietly: Bool = false) async {
+        if !quietly { isLoading = true }
         processes = await Task.detached(priority: .userInitiated) {
             ProcessScanner.listProcesses()
         }.value
         isLoading = false
+        if !quietly {
+            let translated = processes.filter(\.isTranslated)
+            AppLog.post(.info, "\(processes.count) processes running, \(translated.count) through Rosetta", source: "Processes")
+        }
     }
 }
 

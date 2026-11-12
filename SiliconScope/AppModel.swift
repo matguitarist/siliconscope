@@ -39,7 +39,8 @@ final class AppModel {
         guard !isScanningApps else { return }
         isScanningApps = true
         let started = Date()
-        apps = await Task.detached(priority: .userInitiated) { AppScanner.scan() }.value
+        let extraFolders = Preferences.extraFolders
+        apps = await Task.detached(priority: .userInitiated) { AppScanner.scan(extraFolders: extraFolders) }.value
         isScanningApps = false
         hasScannedApps = true
         // Results for apps that changed or went away no longer apply.
@@ -57,6 +58,9 @@ final class AppModel {
         for app in intelApps where !app.isCrossOverLauncher {
             AppLog.post(.warning, "\(app.name) \(app.version ?? "") is Intel only and runs through Rosetta", source: "Scan")
         }
+        if UserDefaults.standard.bool(forKey: Preferences.checkAfterScan) {
+            await checkNativeVersions()
+        }
     }
 
     // MARK: - Native versions
@@ -72,11 +76,12 @@ final class AppModel {
         for app in targets { nativeChecks[app.id] = .checking }
         AppLog.post(.info, "Looking for Apple Silicon versions of \(targets.count) app\(targets.count == 1 ? "" : "s")", source: "Native Check")
 
+        let sources = Preferences.nativeSources
         await withTaskGroup(of: (AppItem, NativeCheckState).self) { group in
             for app in targets {
                 group.addTask {
                     do {
-                        return (app, .done(try await NativeVersionChecker.shared.check(app)))
+                        return (app, .done(try await NativeVersionChecker.shared.check(app, sources: sources)))
                     } catch {
                         return (app, .failed(error.localizedDescription))
                     }

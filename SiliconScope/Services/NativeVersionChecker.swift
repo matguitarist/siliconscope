@@ -31,12 +31,13 @@ actor NativeVersionChecker {
         session = URLSession(configuration: configuration)
     }
 
-    func check(_ app: AppItem) async throws -> NativeCheck {
+    func check(_ app: AppItem, sources: Set<NativeCheck.Source> = Set(NativeCheck.Source.allCases)) async throws -> NativeCheck {
         if app.isCrossOverLauncher { return .windowsApp }
+        if sources.isEmpty { throw CheckError("Every source is turned off in Settings > Apple Silicon Versions.") }
         // Sources fail independently: a dead feed shouldn't hide a Homebrew answer.
-        async let brewResult = attempt { try await self.homebrewCheck(app) }
-        async let feedResult = attempt { try await self.sparkleCheck(app) }
-        async let storeResult = attempt { try await self.appStoreCheck(app) }
+        async let brewResult = attempt { sources.contains(.homebrew) ? try await self.homebrewCheck(app) : nil }
+        async let feedResult = attempt { sources.contains(.sparkle) ? try await self.sparkleCheck(app) : nil }
+        async let storeResult = attempt { sources.contains(.appStore) ? try await self.appStoreCheck(app) : nil }
         let results = await [brewResult, feedResult, storeResult]
 
         let checks = results.compactMap { try? $0.get() }.compactMap { $0 }
@@ -89,9 +90,22 @@ actor NativeVersionChecker {
             homebrewToken: cask.token)
     }
 
+    nonisolated static var caskCacheURL: URL { URL.cachesDirectory.appending(path: "SiliconScope/cask.json") }
+
+    /// When Homebrew's index was last downloaded, if it's cached.
+    nonisolated static var caskCacheDate: Date? {
+        (try? FileManager.default.attributesOfItem(atPath: caskCacheURL.path))?[.modificationDate] as? Date
+    }
+
+    /// Forgets the cached index, so the next check downloads it again.
+    func clearCaskCache() {
+        caskIndex = nil
+        try? FileManager.default.removeItem(at: Self.caskCacheURL)
+    }
+
     private func loadCaskIndex() async throws -> CaskIndex {
         if let caskIndex { return caskIndex }
-        let cacheURL = URL.cachesDirectory.appending(path: "SiliconScope/cask.json")
+        let cacheURL = Self.caskCacheURL
         let data: Data
         if let attributes = try? FileManager.default.attributesOfItem(atPath: cacheURL.path),
            let modified = attributes[.modificationDate] as? Date,

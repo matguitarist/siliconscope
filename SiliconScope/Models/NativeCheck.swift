@@ -17,7 +17,7 @@ struct NativeCheck: Sendable, Equatable {
         static func < (lhs: Verdict, rhs: Verdict) -> Bool { lhs.rawValue < rhs.rawValue }
     }
 
-    enum Source: String, Sendable {
+    enum Source: String, Sendable, CaseIterable {
         case homebrew = "Homebrew"
         case sparkle = "Update Feed"
         case appStore = "App Store"

@@ -13,10 +13,13 @@ struct AppListView: View {
     @State private var selection: AppItem.ID?
     @State private var architectureFilter: Architecture?
     @State private var showOnlyNativeAvailable = false
-    @State private var viewMode: ListViewMode = .table
+    @AppStorage(Preferences.listViewMode) private var viewMode = ListViewMode.table
+    @AppStorage(Preferences.showCrossOverLaunchers) private var showCrossOverLaunchers = true
     @State private var expandedGroups: Set<Architecture> = Set(Architecture.allCases)
 
-    private var apps: [AppItem] { model.apps }
+    private var apps: [AppItem] {
+        showCrossOverLaunchers ? model.apps : model.apps.filter { !$0.isCrossOverLauncher }
+    }
 
     private var filteredApps: [AppItem] {
         var base = apps

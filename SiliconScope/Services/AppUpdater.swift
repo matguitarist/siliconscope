@@ -1,6 +1,6 @@
-// Updates of the app itself, through Sparkle. Off until releases are
-// hosted: Info.plist needs SUFeedURL (the appcast) and SUPublicEDKey (the
-// key that signs updates). tools/release.sh publishes both feed and zips.
+// Updates of the app itself, through Sparkle: SUFeedURL (the appcast) and
+// SUPublicEDKey (the key that signs updates) are in project.yml.
+// tools/release.sh publishes the feed and the zips.
 
 import Sparkle
 import SwiftUI
@@ -22,6 +22,18 @@ final class AppUpdater {
         controller = isConfigured
             ? SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
             : nil
+    }
+
+    var automaticallyChecks: Bool {
+        get { controller?.updater.automaticallyChecksForUpdates ?? false }
+        set { controller?.updater.automaticallyChecksForUpdates = newValue }
+    }
+
+    static var versionString: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = info["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info["CFBundleVersion"] as? String ?? "?"
+        return "\(version) (\(build))"
     }
 
     func checkForUpdates() {

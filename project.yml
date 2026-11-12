@@ -48,9 +48,11 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: ""
         # App updates (Sparkle): tools/release.sh publishes the zip on GitHub
-        # Releases and the feed (appcast.xml) on the main branch. Updates stay
-        # off until SUPublicEDKey is added here (generate_keys --account siliconscope).
+        # Releases and the feed (appcast.xml) on the main branch. The key
+        # checks that updates were signed with the private key in the
+        # maintainer's Keychain (account "siliconscope").
         SUFeedURL: https://raw.githubusercontent.com/matguitarist/siliconscope/main/appcast.xml
+        SUPublicEDKey: V3AuVj1aiPqORcEOHkmaQsgdBadsZfSPsMm8a6ujzgM=
         SUEnableAutomaticChecks: true
     settings:
       base:

@@ -4,18 +4,19 @@ import Foundation
 enum AppScanner {
     /// Folders to search. System apps are intentionally excluded — they're always
     /// universal/native on any supported OS and would just be noise here.
-    private static var searchRoots: [String] {
+    static var standardRoots: [String] {
         [
             "/Applications",
             (NSHomeDirectory() as NSString).appendingPathComponent("Applications"),
         ]
     }
 
-    static func scan() -> [AppItem] {
+    /// Scans the standard folders plus `extraFolders` (from Settings).
+    static func scan(extraFolders: [String] = []) -> [AppItem] {
         var seenPaths = Set<String>()
         var results: [AppItem] = []
 
-        for root in searchRoots {
+        for root in standardRoots + extraFolders {
             for appPath in findAppBundles(inDirectory: root, remainingDepth: 2) {
                 guard seenPaths.insert(appPath).inserted else { continue }
                 if let item = makeAppItem(path: appPath) {

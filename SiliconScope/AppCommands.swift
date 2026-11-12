@@ -9,6 +9,10 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) { }
 
+        CommandGroup(replacing: .help) {
+            HelpCommands(model: model)
+        }
+
         CommandGroup(after: .appInfo) {
             if appUpdater.isConfigured {
                 Button("Check for Updates…") { appUpdater.checkForUpdates() }
