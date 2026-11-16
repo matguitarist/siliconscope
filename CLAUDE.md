@@ -3,6 +3,9 @@
 Shows which installed apps and running processes are Intel-only (Rosetta),
 universal, or Apple Silicon, and finds Apple Silicon versions of Intel apps.
 
+Shared rules for how every project is laid out and named:
+@~/.claude/project-layout.md
+
 ## Build
 
     xcodegen generate     # after editing project.yml (the .xcodeproj is generated)
