@@ -2,7 +2,7 @@ import AppKit
 import CryptoKit
 import Foundation
 import LogKit
-import os
+import ProcessKit
 import Security
 
 /// Installs a version found by `NativeVersionChecker` over the installed app.
@@ -70,7 +70,7 @@ actor AppInstaller {
         }
         try await quitIfRunning(app, progress: progress)
 
-        let managed = try await ProcessRunner.run(brew, ["list", "--cask", token]).status == 0
+        let managed = try await Shell.run(brew, ["list", "--cask", token], options: Self.brewOptions()).succeeded
         let arguments = managed ? ["upgrade", "--cask", token] : ["install", "--cask", "--force", token]
         let command = "brew " + arguments.joined(separator: " ")
         await progress(managed ? "Upgrading…" : "Installing…")
@@ -90,18 +90,20 @@ actor AppInstaller {
             }
         }
 
-        let result = try await ProcessRunner.run(brew, arguments, environment: [
+        let result = try await Shell.run(brew, arguments, options: Self.brewOptions(environment: [
             "HOMEBREW_NO_ENV_HINTS": "1",
             "NONINTERACTIVE": "1",
         ]) { line in
+            guard !line.trimmingCharacters(in: .whitespaces).isEmpty else { return }
             let level: LogLevel = line.hasPrefix("Error") ? .error : line.hasPrefix("Warning") ? .warning : .info
             AppLog.post(level, line, source: "Homebrew")
-        }
-        guard result.status == 0 else {
+        })
+        guard result.succeeded else {
             restore()
-            let reason = result.output.contains("sudo") || result.output.contains("password")
+            let output = result.text
+            let reason = output.contains("sudo") || output.contains("password")
                 ? "This cask needs your administrator password."
-                : (result.output.split(separator: "\n").last { $0.hasPrefix("Error") }.map(String.init) ?? "brew stopped with code \(result.status).")
+                : (output.split(separator: "\n").last { $0.hasPrefix("Error") }.map(String.init) ?? "brew stopped with code \(result.status).")
             throw InstallError("\(reason) Run it in Terminal to finish.", terminalCommand: "\(brew) \(arguments.joined(separator: " "))")
         }
 
@@ -131,7 +133,7 @@ actor AppInstaller {
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
         var mountPoint: URL?
         defer {
-            if let mountPoint { _ = try? ProcessRunner.runSync("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force", "-quiet"]) }
+            if let mountPoint { _ = try? Shell.runSync("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force", "-quiet"]) }
             try? FileManager.default.removeItem(at: work)
         }
 
@@ -260,10 +262,20 @@ actor AppInstaller {
         throw InstallError("\(app.name) didn't quit. Quit it, then update again.")
     }
 
+    /// brew and the tools it starts by name need Homebrew's folders, which an app started from the Dock lacks.
+    /// Its errors and warnings go to the log with its other lines.
+    private static func brewOptions(environment: [String: String] = [:],
+                                    onLine: (@Sendable (String) -> Void)? = nil) -> Shell.Options {
+        Shell.Options(environment: ["PATH": Shell.standardPATH].merging(environment) { _, given in given },
+                      stderr: .merged, onLine: onLine)
+    }
+
+    /// Runs a short tool and waits for it (unzipping, mounting), stderr in its output like Terminal shows it.
     private func runChecked(_ tool: String, _ arguments: [String], input: String? = nil, what: String) throws {
-        let result = try ProcessRunner.runSync(tool, arguments, input: input)
-        guard result.status == 0 else {
-            throw InstallError("Couldn't \(what): \(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
+        let result = try Shell.runSync(tool, arguments, options: Shell.Options(
+            input: input.map { .data(Data($0.utf8)) } ?? .none, stderr: .merged))
+        guard result.succeeded else {
+            throw InstallError("Couldn't \(what): \(result.text.trimmingCharacters(in: .whitespacesAndNewlines))")
         }
     }
 }
@@ -300,82 +312,5 @@ enum CodeSignature {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess else { return nil }
         return code
-    }
-}
-
-// MARK: - Running tools
-
-enum ProcessRunner {
-    struct Result: Sendable {
-        let status: Int32
-        let output: String
-    }
-
-    /// Runs a tool without blocking, passing each output line to `onLine` as it comes.
-    static func run(_ tool: String, _ arguments: [String], environment: [String: String] = [:],
-                    onLine: (@Sendable (String) -> Void)? = nil) async throws -> Result {
-        let process = Process()
-        process.executableURL = URL(filePath: tool)
-        process.arguments = arguments
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        env.merge(environment) { _, new in new }
-        process.environment = env
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        process.standardInput = FileHandle.nullDevice
-
-        let buffer = OSAllocatedUnfairLock(initialState: (all: "", partial: ""))
-        pipe.fileHandleForReading.readabilityHandler = { @Sendable handle in
-            let chunk = String(decoding: handle.availableData, as: UTF8.self)
-            let lines: [String] = buffer.withLock { state in
-                state.all += chunk
-                state.partial += chunk
-                var parts = state.partial.components(separatedBy: "\n")
-                state.partial = parts.removeLast()
-                return parts
-            }
-            for line in lines where !line.trimmingCharacters(in: .whitespaces).isEmpty { onLine?(line) }
-        }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            process.terminationHandler = { @Sendable finished in
-                pipe.fileHandleForReading.readabilityHandler = nil
-                let rest = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-                let (output, last) = buffer.withLock { state in
-                    state.all += rest
-                    return (state.all, state.partial + rest)
-                }
-                if !last.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { onLine?(last) }
-                continuation.resume(returning: Result(status: finished.terminationStatus, output: output))
-            }
-            do {
-                try process.run()
-            } catch {
-                process.terminationHandler = nil
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
-    /// Runs a short tool and waits for it (unzipping, mounting).
-    static func runSync(_ tool: String, _ arguments: [String], input: String? = nil) throws -> Result {
-        let process = Process()
-        process.executableURL = URL(filePath: tool)
-        process.arguments = arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        let inputPipe = Pipe()
-        process.standardInput = input == nil ? FileHandle.nullDevice : inputPipe
-        try process.run()
-        if let input {
-            inputPipe.fileHandleForWriting.write(Data(input.utf8))
-            try? inputPipe.fileHandleForWriting.close()
-        }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        return Result(status: process.terminationStatus, output: String(decoding: data, as: UTF8.self))
     }
 }

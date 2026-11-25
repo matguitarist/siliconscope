@@ -31,6 +31,7 @@
 		C5ABC8596CEB7BAD984DC51C /* ProcessScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6E9D1C5CD4C527372C1A5A /* ProcessScanner.swift */; };
 		C8E10B954B55CD1AE1ABAC27 /* LogKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 95B587BBCEC6C79466243824 /* LogKitUI */; };
 		D989296BE2D9BD86052A8A8B /* ProcessListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D680063B976FA2260460AC01 /* ProcessListView.swift */; };
+		DF92B90A41CC9DE1AA66A2A4 /* ProcessKit in Frameworks */ = {isa = PBXBuildFile; productRef = FDDB1BF9F2485AB0D28C7A13 /* ProcessKit */; };
 		EED86654ED230FDF97360B6B /* AppItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B3A9BF6F3481492E9DC5FB /* AppItem.swift */; };
 		EF95F3763E929A893743D8D4 /* AppListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D4C0A798109DFD336271BE /* AppListView.swift */; };
 		F0F2FEAD54DE6CF42C246B41 /* AppRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE828D672BE5659C6CFEE764 /* AppRow.swift */; };
@@ -78,6 +79,7 @@
 			files = (
 				C8E10B954B55CD1AE1ABAC27 /* LogKitUI in Frameworks */,
 				A2C81E840E9B2145E4CD3EF8 /* Sparkle in Frameworks */,
+				DF92B90A41CC9DE1AA66A2A4 /* ProcessKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -187,6 +189,7 @@
 			packageProductDependencies = (
 				95B587BBCEC6C79466243824 /* LogKitUI */,
 				3672F58F760CD7418B583EF1 /* Sparkle */,
+				FDDB1BF9F2485AB0D28C7A13 /* ProcessKit */,
 			);
 			productName = SiliconScope;
 			productReference = 702011A87CC217D90BFC1BC6 /* SiliconScope.app */;
@@ -199,7 +202,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					6D69E1C27B1E37E51C26D793 = {
 						ProvisioningStyle = Automatic;
@@ -217,6 +220,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				620156620EE312FB3EDED006 /* XCRemoteSwiftPackageReference "LogKit" */,
+				EE6E1BBC38B91F52B9B4762C /* XCRemoteSwiftPackageReference "ProcessKit" */,
 				1458DD0C373EFCC5196062AB /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -488,6 +492,14 @@
 				minimumVersion = 0.6.0;
 			};
 		};
+		EE6E1BBC38B91F52B9B4762C /* XCRemoteSwiftPackageReference "ProcessKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/matguitarist/ProcessKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -500,6 +512,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 620156620EE312FB3EDED006 /* XCRemoteSwiftPackageReference "LogKit" */;
 			productName = LogKitUI;
+		};
+		FDDB1BF9F2485AB0D28C7A13 /* ProcessKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EE6E1BBC38B91F52B9B4762C /* XCRemoteSwiftPackageReference "ProcessKit" */;
+			productName = ProcessKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
