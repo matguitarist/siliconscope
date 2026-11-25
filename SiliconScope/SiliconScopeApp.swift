@@ -12,6 +12,7 @@ struct SiliconScopeApp: App {
     var body: some Scene {
         Window("SiliconScope", id: "main") {
             ContentView(model: model)
+                .whatsNew(app: "SiliconScope", repository: "matguitarist/siliconscope")
                 .frame(minWidth: 760, minHeight: 480)
                 .noInitialFocus()
         }

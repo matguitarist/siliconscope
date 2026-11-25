@@ -16,6 +16,7 @@
 		2C1408F64A6769F2E77A35B9 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C77EB5DEE2BBDCA31BF2279 /* Preferences.swift */; };
 		2CA3C9F847F98153F7ABFB6F /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F00C5913099C75666DD57D /* AppLog.swift */; };
 		3A9B27F1C054F46731B4622D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 18581DBBAD93582EE1C25122 /* AppIcon.icon */; };
+		55AFEDF0005A4A2B2A34F193 /* release-notes in Resources */ = {isa = PBXBuildFile; fileRef = 6809E82EECD5BB2EA40D1F1F /* release-notes */; };
 		5A0A30448A0F7354117011DC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD4498BF6CE532C340E0276 /* SettingsView.swift */; };
 		644EB9CF2AE960569FA993E2 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD471CA088306326EE3D899 /* AppUpdater.swift */; };
 		7251B26424754A4FFEB11CDE /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB3C3BF9A75341F2CFB1898 /* AppModel.swift */; };
@@ -53,6 +54,7 @@
 		53C912D6F25A9E5B7C8833C6 /* NativeCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeCheck.swift; sourceTree = "<group>"; };
 		578BA0034ED49BEEC107C05A /* ProcessRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRow.swift; sourceTree = "<group>"; };
 		65197273EA8EBE36F89A4968 /* MachOReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOReader.swift; sourceTree = "<group>"; };
+		6809E82EECD5BB2EA40D1F1F /* release-notes */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "release-notes"; sourceTree = SOURCE_ROOT; };
 		69F00C5913099C75666DD57D /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		702011A87CC217D90BFC1BC6 /* SiliconScope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiliconScope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76E68D5CD242704F290A75A5 /* AppMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMenus.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 		7A25C06A4EB772E8EDEEA29C = {
 			isa = PBXGroup;
 			children = (
+				6809E82EECD5BB2EA40D1F1F /* release-notes */,
 				C7E5D17EF97F1360618E1CC8 /* SiliconScope */,
 				1FC36DB596512D372A2D4996 /* Products */,
 			);
@@ -242,6 +245,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A9B27F1C054F46731B4622D /* AppIcon.icon in Resources */,
+				55AFEDF0005A4A2B2A34F193 /* release-notes in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
