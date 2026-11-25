@@ -17,7 +17,7 @@ packages:
   # Runs brew, ditto, hdiutil and tar for the Update button.
   ProcessKit:
     url: https://github.com/matguitarist/ProcessKit
-    from: 0.1.1
+    from: 0.2.1
   # The log viewer the apps share (the Log page).
   LogKit:
     url: https://github.com/matguitarist/LogKit

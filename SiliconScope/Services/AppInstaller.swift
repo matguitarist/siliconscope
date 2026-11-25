@@ -263,11 +263,21 @@ actor AppInstaller {
     }
 
     /// brew and the tools it starts by name need Homebrew's folders, which an app started from the Dock lacks.
-    /// Its errors and warnings go to the log with its other lines.
+    /// Its errors and warnings go to the log with its other lines; a download's progress bar
+    /// (redrawn with a lone \r) stays one line, logged as Terminal ends up showing it.
     private static func brewOptions(environment: [String: String] = [:],
                                     onLine: (@Sendable (String) -> Void)? = nil) -> Shell.Options {
-        Shell.Options(environment: ["PATH": Shell.standardPATH].merging(environment) { _, given in given },
-                      stderr: .merged, onLine: onLine)
+        var redrawn: (@Sendable (String) -> Void)?
+        if let onLine {
+            redrawn = { line in onLine(lastRedraw(of: line)) }
+        }
+        return Shell.Options(environment: ["PATH": Shell.standardPATH].merging(environment) { _, given in given },
+                             stderr: .merged, onLine: redrawn, lineBreaks: .newline)
+    }
+
+    /// The text a line ends up showing after its \r redraws.
+    private static func lastRedraw(of line: String) -> String {
+        line.split(separator: "\r").last { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.map(String.init) ?? ""
     }
 
     /// Runs a short tool and waits for it (unzipping, mounting), stderr in its output like Terminal shows it.

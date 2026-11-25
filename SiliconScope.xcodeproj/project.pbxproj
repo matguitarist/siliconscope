@@ -497,7 +497,7 @@
 			repositoryURL = "https://github.com/matguitarist/ProcessKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.1;
+				minimumVersion = 0.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
