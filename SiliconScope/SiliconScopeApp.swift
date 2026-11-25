@@ -16,7 +16,13 @@ struct SiliconScopeApp: App {
                 .noInitialFocus()
         }
         .commands {
-            AppCommands(model: model, appUpdater: appUpdater)
+            StandardCommands(app: "SiliconScope", repository: "matguitarist/siliconscope",
+                             updates: AppUpdates(isAvailable: appUpdater.isConfigured) { appUpdater.checkForUpdates() },
+                             help: .window(HelpView.windowID), log: .page { model.page = .log }) {
+                HelpCommands()
+            }
+            PageCommands(pages: SidebarItem.allCases, title: \.rawValue) { model.page = $0 }
+            AppMenus(model: model)
         }
 
         Window("SiliconScope Help", id: HelpView.windowID) {

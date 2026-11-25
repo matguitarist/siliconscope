@@ -42,9 +42,7 @@ enum Preferences {
 }
 
 enum AppLinks {
-    static let repository = URL(string: "https://github.com/matguitarist/siliconscope")!
     static let releases = URL(string: "https://github.com/matguitarist/siliconscope/releases")!
-    static let newIssue = URL(string: "https://github.com/matguitarist/siliconscope/issues/new")!
     static let rosetta = URL(string: "https://support.apple.com/102527")!
     static let homebrew = URL(string: "https://formulae.brew.sh/cask/")!
 }

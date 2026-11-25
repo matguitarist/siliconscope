@@ -21,6 +21,7 @@
 		7251B26424754A4FFEB11CDE /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AB3C3BF9A75341F2CFB1898 /* AppModel.swift */; };
 		7D5769D20CA3C5BCC43773E4 /* NativeCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C912D6F25A9E5B7C8833C6 /* NativeCheck.swift */; };
 		7DF5BF680B61198FE9D4102C /* MachOReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65197273EA8EBE36F89A4968 /* MachOReader.swift */; };
+		90FF2CFB8B4D224A0527BE01 /* AppMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E68D5CD242704F290A75A5 /* AppMenus.swift */; };
 		91769267719954E8470632FD /* AppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82FDE11B27780162F1777141 /* AppIconView.swift */; };
 		9A170E6C7E4C0A97D4A048D3 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = B682F6481A811B0D699C68FC /* AppCommands.swift */; };
 		A2C81E840E9B2145E4CD3EF8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3672F58F760CD7418B583EF1 /* Sparkle */; };
@@ -54,6 +55,7 @@
 		65197273EA8EBE36F89A4968 /* MachOReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOReader.swift; sourceTree = "<group>"; };
 		69F00C5913099C75666DD57D /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		702011A87CC217D90BFC1BC6 /* SiliconScope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiliconScope.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		76E68D5CD242704F290A75A5 /* AppMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMenus.swift; sourceTree = "<group>"; };
 		7D070609119BC8B5C2D74E88 /* WindowBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowBehavior.swift; sourceTree = "<group>"; };
 		82FDE11B27780162F1777141 /* AppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconView.swift; sourceTree = "<group>"; };
 		8B6E9D1C5CD4C527372C1A5A /* ProcessScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessScanner.swift; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				B682F6481A811B0D699C68FC /* AppCommands.swift */,
+				76E68D5CD242704F290A75A5 /* AppMenus.swift */,
 				4AB3C3BF9A75341F2CFB1898 /* AppModel.swift */,
 				451D116C72A46D6D8EB0F2C3 /* Info.plist */,
 				4C77EB5DEE2BBDCA31BF2279 /* Preferences.swift */,
@@ -255,6 +258,7 @@
 				EED86654ED230FDF97360B6B /* AppItem.swift in Sources */,
 				EF95F3763E929A893743D8D4 /* AppListView.swift in Sources */,
 				2CA3C9F847F98153F7ABFB6F /* AppLog.swift in Sources */,
+				90FF2CFB8B4D224A0527BE01 /* AppMenus.swift in Sources */,
 				7251B26424754A4FFEB11CDE /* AppModel.swift in Sources */,
 				F0F2FEAD54DE6CF42C246B41 /* AppRow.swift in Sources */,
 				A3EDD4E4191B3462611E5B97 /* AppScanner.swift in Sources */,

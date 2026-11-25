@@ -220,18 +220,10 @@ private struct Shortcut: View {
 }
 
 /// The Help menu.
+/// SiliconScope's own Help items, under SiliconScope Help (StandardCommands has the rest,
+/// with Show Log).
 struct HelpCommands: View {
-    let model: AppModel
-    @Environment(\.openWindow) private var openWindow
-
     var body: some View {
-        Button("SiliconScope Help") { openWindow(id: HelpView.windowID) }
-            .keyboardShortcut("?", modifiers: .command)
-        Divider()
-        Button("Show Log") {
-            openWindow(id: "main")
-            model.page = .log
-        }
         Button("Open Logs Folder") {
             if let url = AppLog.store.fileURL {
                 NSWorkspace.shared.open(url.deletingLastPathComponent())
@@ -240,9 +232,5 @@ struct HelpCommands: View {
         Divider()
         Link("About Rosetta", destination: AppLinks.rosetta)
         Link("Browse Homebrew Apps", destination: AppLinks.homebrew)
-        Divider()
-        Link("Release Notes", destination: AppLinks.releases)
-        Link("SiliconScope on GitHub", destination: AppLinks.repository)
-        Link("Report a Problem or Suggest an Idea…", destination: AppLinks.newIssue)
     }
 }
