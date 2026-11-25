@@ -3,6 +3,20 @@
     <channel>
         <title>SiliconScope</title>
         <item>
+            <title>1.4.0</title>
+            <pubDate>Wed, 25 Nov 2026 17:03:24 -0500</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## The same Help menu as every app
+
+- **What's New in SiliconScope** opens the latest release notes.
+- **Report a Problem…** opens a new GitHub issue with the app version, build and macOS version already filled in.
+- **Check for Updates…** is always in the SiliconScope menu, greyed out when updates aren't available.
+]]></description>
+            <enclosure url="https://github.com/matguitarist/siliconscope/releases/download/v1.4.0/SiliconScope-1.4.0.zip" length="4843801" type="application/octet-stream" sparkle:edSignature="+2w6HLuP6gVdhggCaGIB8AIx6EfBVabvjawVZC3cm79I+cXp1oTfF3P//dEYsYpNrK65Grt7ZfSh/hv1V49iAQ=="/>
+        </item>
+        <item>
             <title>1.3.1</title>
             <pubDate>Wed, 25 Nov 2026 10:29:04 -0500</pubDate>
             <sparkle:version>6</sparkle:version>
