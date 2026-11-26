@@ -3,6 +3,18 @@
     <channel>
         <title>SiliconScope</title>
         <item>
+            <title>1.4.1</title>
+            <pubDate>Wed, 25 Nov 2026 18:59:58 -0500</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.4.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## See what changed after an update
+
+- The first time you open a new version, a sheet shows what's new in it, with a link to every release.
+]]></description>
+            <enclosure url="https://github.com/matguitarist/siliconscope/releases/download/v1.4.1/SiliconScope-1.4.1.zip" length="4903929" type="application/octet-stream" sparkle:edSignature="A3fAHMc2UFO6G55aetN6QVvrlit+1lgFi1tJr3qZtbbk3o9PO9uuHQBN9KFqmpz1RLFavN8ztNN1oC8G00qNAg=="/>
+        </item>
+        <item>
             <title>1.4.0</title>
             <pubDate>Wed, 25 Nov 2026 17:03:24 -0500</pubDate>
             <sparkle:version>7</sparkle:version>
